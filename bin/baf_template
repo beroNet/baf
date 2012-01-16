@@ -45,7 +45,7 @@ baf_templates = {
 
 		baf_file['conf']: {
 			'editor': "/usr/bin/vim",
-			'toolchain': "/usr/local/share/baf"
+			'toolchain': "BAF_TOOLCHAIN_BASEPATH/share/baf"
 			},
 		'module-Makefile': [
 			"# Makefile skeleton for baf modules\n\n",
@@ -122,11 +122,19 @@ def baf_create_pkginfo():
 
 	return(0)
 
-def baf_create():
+def baf_create(name):
 
-	if len(os.listdir(os.getcwd())):
-		print " ! current directory not empty, leaving."
+	if not len(name):
+		print " ! no repository name given, leaving."
 		return(1)
+
+	if os.path.exists(name):
+		print " ! a directory named '" + name + "' already exists, leaving."
+		return(1)
+
+	os.mkdir(name)
+
+	os.chdir(name)
 
 	baf_conf_init()
 
@@ -394,18 +402,17 @@ def main():
 	if len(sys.argv) == 1:
 		print baf_usage['main']
 		sys.exit(1)
-
-	if sys.argv[1] == "create":
-		sys.exit(baf_create())
 	elif sys.argv[1] == "help":
 		print baf_usage['main']
 		sys.exit(0)
 
+	if sys.argv[1] == "create":
+		sys.exit(baf_create(sys.argv[2]))
+
 	if baf_conf_read():
 		print " ! not a valid baf app, leaving."
 		sys.exit(1)
-
-	if sys.argv[1] == "make":
+	elif sys.argv[1] == "make":
 		sys.exit(baf_make())
 	elif sys.argv[1] == "module":
 		sys.exit(baf_module(sys.argv))
