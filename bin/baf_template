@@ -93,8 +93,8 @@ baf_templates = {
 		}
 
 baf_usage = {
-		'main':"main: TODO!",
-		'module':"module: TODO!"
+		'main':"baf [help | create <name> | module <operation> | make]",
+		'module':"baf module [create | compile | delete] <name>"
 }
 
 def baf_create_template():
