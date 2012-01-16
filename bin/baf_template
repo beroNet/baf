@@ -338,6 +338,10 @@ def baf_module_search(name):
 
 def baf_module(argv):
 
+	if len(argv) == 2:
+		print baf_usage['module']
+		return(1)
+
 	if argv[2] == "help":
 		print baf_usage['module']
 		return(0)
