@@ -1,0 +1,10 @@
+prefix=/home/florian/src/berofixfs/app/arm/work/target/usr/local
+exec_prefix=${prefix}
+libdir=/home/florian/src/berofixfs/app/arm/work/target/usr/local/lib
+includedir=${prefix}/include
+
+Name: avahi-core
+Description: Avahi Multicast DNS Responder (Embeddable Stack)
+Version: 0.6.30
+Libs: -L${libdir} -lavahi-common -lavahi-core
+Cflags: -D_REENTRANT -I${includedir}

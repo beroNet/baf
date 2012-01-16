@@ -1,0 +1,11 @@
+prefix=
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: OpenSSL
+Description: Secure Sockets Layer and cryptography libraries and tools
+Version: 0.9.7d
+Requires: 
+Libs: -L${libdir} -lssl -lcrypto  -L/home/berofix/src/berofixfs/src/arm/work/buildroot/build_arm/staging_dir/lib -ldl -ldl
+Cflags: -I${includedir} 

@@ -1,0 +1,417 @@
+#!/usr/bin/env python
+
+import os, sys, string, shutil, datetime, tarfile, re, tempfile
+
+baf_conf = {}
+
+baf_dirs = {
+		'template': {
+			'dir': "template",
+			'sub': ["init", "setup", "bin", "lib", "www", "cron", "avahi", "cloud"]
+			},
+		'pkg': {
+			'dir': "pkg"
+			},
+		'pkginfo': {
+			'dir': "pkginfo"
+			},
+		'modules': {
+			'dir': "modules"
+			},
+		'module': {
+			'sub': ["bin", "lib", "conf", "www", "init", "src"]
+			},
+		'work': {
+			'dir': "work",
+			'sub': "userapp"
+			}
+		}
+
+baf_file = {
+		'conf': ".baf.conf",
+		'vers': "VERSION"
+		}
+
+baf_templates = {
+		baf_file['vers']: {
+			'TYPE': "userappfs",
+			'VERSION': "1",
+			'DESCRIPTION': "\"default package\"",
+			'SLOTS': "1",
+			'NEED_KERNEL': "1",
+			'NEED_ROOTFS': "1",
+			'NEED_FIRMWARE': "1"
+			},
+
+		baf_file['conf']: {
+			'editor': "/usr/bin/vim",
+			'toolchain': "/usr/local/share/baf"
+			},
+		'module-Makefile': [
+			"# Makefile skeleton for baf modules\n\n",
+			"CUR_DIR\t\t:= $(shell pwd)\n",
+			"TOOLCHAIN\t:= $(BAF_DIR)/toolchain/bin\n",
+			"TOOLPREFX\t:= arm-linux-uclibc\n\n",
+			"TOOL_INC\t:= $(BAF_DIR)/toolchain/usr/include\n",
+			"TOOL_LIB\t:= $(BAF_DIR)/toolchain/lib\n",
+			"TOOL_USR_LIB\t:= $(BAF_DIR)/toolchain/usr/lib\n\n",
+			"BFX_INC\t\t:= $(BAF_DIR)/include\n",
+			"BFX_LIB\t\t:= $(BAF_DIR)/lib\n\n",
+			"CFLAGS\t\t:= \"-I$(TOOL_INC) -I$(BFX_INC)\"\n",
+			"LDFLAGS\t\t:= \"-L$(TOOL_LIB) -L$(TOOL_USR_LIB) -L$(BFX_LIB)\"\n\n",
+			"DEST_ROOT\t:= /userapp\n",
+			"INST_PATH\t:= $(CUR_DIR)\n\n",
+			"CONF_OPTS\t:= --build=$(shell uname -m) --host=$(TOOLPREFX) --prefix=$(DEST_ROOT)\n",
+			"MAKE_OPTS\t:= -q\n",
+			"INST_OPTS\t:= exec_prefix=$(INST_PATH) -q\n\n",
+			"all:\n",
+			"\t@export PATH=\"$(TOOLCHAIN):$$PATH\"; \\\n",
+			"\texport CC=\"$(TOOLPREFX)-gcc\"; \\\n",
+			"\texport CPP=\"$(TOOLPREFX)-cpp\"; \\\n",
+			"\texport CXX=\"$(TOOLPREFX)-g++\"; \\\n",
+			"\texport CXXCPP=\"$(TOOLPREFX)-g++ -E\"; \\\n",
+			"\texport AR=\"$(TOOLPREFX)-ar\"; \\\n",
+			"\texport LD=\"$(TOOLPREFX)-ld\"; \\\n",
+			"\texport NM=\"$(TOOLPREFX)-nm\"; \\\n",
+			"\texport RANLIB=\"$(TOOLPREFX)-ranlib\"; \\\n",
+			"\texport STRIP=\"$(TOOLPREFX)-strip\"; \\\n",
+			"\texport CFLAGS=$(CFLAGS); \\\n",
+			"\texport LDFLAGS=$(LDFLAGS); \\\n",
+			"\tfor i in `/bin/ls $(CUR_DIR)/src`; do \\\n",
+			"\t\tcd $(CUR_DIR)/src/$$i/; \\\n",
+			"\t\tif [ -x configure ]; then \\\n",
+			"\t\t\t./configure $(CONF_OPTS); \\\n",
+			"\t\tfi; \\\n",
+			"\t\tmake $(MAKE_OPTS); \\\n",
+			"\tdone;\n\n",
+			"install:\n",
+			"\t@for i in `/bin/ls $(CUR_DIR)/src/`; do \\\n",
+			"\t\tcd $(CUR_DIR)/src/$$i/; \\\n",
+			"\t\tmake install $(INST_OPTS); \\\n",
+			"\tdone;\n"
+			]
+		}
+
+baf_usage = {
+		'main':"main: TODO!",
+		'module':"module: TODO!"
+}
+
+def baf_create_template():
+
+	os.mkdir(baf_dirs['template']['dir'])
+
+	for sub_dir in baf_dirs['template']['sub']:
+		os.mkdir(baf_dirs['template']['dir'] + "/" + sub_dir)
+
+	return(0)
+
+def baf_create_pkginfo():
+
+	os.mkdir(baf_dirs['pkginfo']['dir'])
+
+	f = open(baf_dirs['pkginfo']['dir'] + "/" + baf_file['vers'], "w")
+	try:
+		f.write("NAME=" + os.path.basename(os.getcwd()) + "\n");
+		for k, v in baf_templates[baf_file['vers']].iteritems():
+			f.write(k + "=" + v + "\n")
+
+		f.flush()
+	finally:
+		f.close()
+
+	return(0)
+
+def baf_create():
+
+	if len(os.listdir(os.getcwd())):
+		print " ! current directory not empty, leaving."
+		return(1)
+
+	baf_conf_init()
+
+	print " * creating directory 'modules'..."
+	os.mkdir(baf_dirs['modules']['dir'])
+
+	print " * creating directory 'pkg'..."
+	os.mkdir(baf_dirs['pkg']['dir'])
+
+	print " * creating directory 'pkginfo'..."
+	baf_create_pkginfo()
+
+	print " * creating directory 'template'..."
+	baf_create_template()
+
+	return(0)
+
+def baf_info_update():
+
+	os.system(baf_conf['editor'] + " " + baf_dirs['pkginfo']['dir'] + "/" + baf_file['vers'])
+
+	return(0)
+
+def baf_package_get_name():
+
+	f = open(baf_dirs['pkginfo']['dir'] + "/" + baf_file['vers'], "r")
+	try:
+		c = f.read()
+	finally:
+		f.close()
+
+	m = re.search('(?<=NAME\=).+', c)
+
+	return(m.group(0))
+
+
+def baf_package_add_file_list(pkg):
+
+	contents = list(set(pkg.getnames()))
+	contents.sort()
+
+	tf = tempfile.NamedTemporaryFile(mode="w+t")
+	try:
+		for item in contents:
+			tf.write(item + "\n")
+		tf.flush()
+
+		pkg.add(tf.name, arcname="content.txt")
+	finally:
+		tf.close()
+
+	return(0)
+
+
+def baf_package_create():
+
+	pkg_name = datetime.datetime.now().strftime(baf_dirs['pkg']['dir'] + "/userapp-%Y-%m-%d_%H_%M_%S.tar.gz")
+
+	pkg = tarfile.open(pkg_name, "w:gz")
+	try:
+		pkg.add(baf_dirs['work']['dir'] + "/" + baf_dirs['work']['sub'] + "/", arcname= baf_package_get_name())
+		pkg.add(baf_dirs['pkginfo']['dir'] + "/" + baf_file['vers'], arcname=baf_file['vers'])
+		baf_package_add_file_list(pkg)
+	finally:
+		pkg.close()
+
+	return(0)
+
+def baf_make():
+
+	if os.path.exists(baf_dirs['work']['dir']):
+		print " * found old 'work' directory, removing."
+		shutil.rmtree(baf_dirs['work']['dir'])
+
+	baf_info_update()
+
+	print " * creating new 'work' directory..."
+	os.mkdir(baf_dirs['work']['dir'])
+	shutil.copytree(baf_dirs['template']['dir'], baf_dirs['work']['dir'] + "/" + baf_dirs['work']['sub'])
+
+	modules = os.listdir(baf_dirs['modules']['dir'])
+	print " * compiling modules..."
+	for module in modules:
+		baf_module_compile(module)
+
+	print " * installing modules..."
+	for module in modules:
+		baf_module_install(module)
+
+	print " * creating package..."
+	baf_package_create()
+
+	return(0)
+
+def baf_module_create(name):
+
+	if not os.path.isdir(baf_dirs['modules']['dir']):
+		print " ! modules directory not found, leaving."
+		return(1)
+
+	if os.path.isdir(baf_dirs['modules']['dir'] + "/" + name):
+		print " ! module '" + name + "' already exists, leaving."
+		return(1)
+
+	print " * creating module '" + name + "'..."
+	os.mkdir(baf_dirs['modules']['dir'] + "/" + name)
+	for sub_dir in baf_dirs['module']['sub']:
+		os.mkdir(baf_dirs['modules']['dir'] + "/" + name + "/" + sub_dir)
+
+	f = open(baf_dirs['modules']['dir'] + "/" + name + "/Makefile", "w")
+	try:
+		for line in baf_templates['module-Makefile']:
+			f.write(line)
+			if line == "CUR_DIR\t\t:= $(shell pwd)\n":
+				f.write("BAF_DIR\t\t:= " + baf_conf['toolchain'] + "\n\n")
+	finally:
+			f.close()
+
+	open(baf_dirs['modules']['dir'] + "/" + name + "/" + "mod_files.lst", "w").close()
+
+	return(0)
+
+def baf_module_delete(name):
+
+	if os.path.isdir(baf_dirs['modules']['dir'] + "/" + name) == False:
+		print " ! module '" + name + "' does not exist, leaving."
+		return(1)
+
+	print " * deleting module '" + name + "'..."
+	shutil.rmtree(baf_dirs['modules']['dir'] + "/" + name)
+
+	return(0)
+
+def baf_module_compile(name):
+
+	if os.path.exists(baf_dirs['modules']['dir'] + "/" + name + "/DISABLED"):
+		print " ! module '" + name + "' disabled, leaving."
+		return(0)
+
+	if not os.path.exists(baf_dirs['modules']['dir'] + "/" + name + "/Makefile"):
+		print "  * no Makefile for module '" + name + "' found, leaving."
+		return(0)
+
+	base_dir = os.getcwd()
+
+	os.chdir(baf_dirs['modules']['dir'] + "/" + name)
+
+	print "  * compiling module '" + name + "'..."
+	ret = os.system("make -s")
+	if ret == 0:
+		ret = os.system("make install -s")
+
+	os.chdir(base_dir)
+
+	return(ret)
+
+def baf_module_install(name):
+
+	if os.path.exists(baf_dirs['modules']['dir'] + "/" + name + "/DISABLED"):
+		print " ! module '" + name + "' disabled, leaving."
+		return(0)
+
+	if not os.path.isdir(baf_dirs['work']['dir']):
+		print " ! work directory does not exist, leaving."
+		return(1)
+
+	print "  * installing module '" + name + "'..."
+
+	f = open(baf_dirs['modules']['dir'] + "/" + name + "/mod_files.lst", "r")
+	try:
+		for line in f.readlines():
+			src_tgt = line.split("=")
+			src = (baf_dirs['modules']['dir']+ "/" + name + "/" + src_tgt[0]).rstrip('\n')
+			tgt = (baf_dirs['work']['dir'] + "/" + baf_dirs['work']['sub'] + "/" + src_tgt[1]).rstrip('\n')
+			print "   * copying file '" + src + "' to '" + tgt + "'..."
+			shutil.copy(src, tgt)
+	finally:
+		f.close()
+
+	return(0)
+
+def baf_module_enable(name):
+
+	if os.path.exists(baf_dirs['modules']['dir'] + "/" + name + "/DISABLED"):
+		os.remove(baf_dirs['modules']['dir'] + "/" + name + "/DISABLED")
+
+	return(0)
+
+def baf_module_disable(name):
+
+	if not os.path.exists(baf_dirs['modules']['dir'] + "/" + name + "/DISABLED"):
+		open(baf_dirs['modules']['dir'] + "/" + name + "/DISABLED", "w").close()
+
+	return(0)
+
+def baf_module_search(name):
+
+	print " ! this functionality has not been implemented yet!"
+
+	return(0)
+
+def baf_module(argv):
+
+	if argv[2] == "help":
+		print baf_usage['module']
+		return(0)
+
+	if len(argv) < 4:
+		print baf_usage['module']
+		return(1)
+
+	if argv[2] == "create":
+		return(baf_module_create(argv[3]))
+
+	if not os.path.exists(baf_dirs['modules']['dir'] + "/" + argv[3]):
+		print " ! module '" + argv[3] + "' does not exist, leaving."
+		return(1)
+
+	if argv[2] == "delete":
+		return(baf_module_delete(argv[3]))
+	elif argv[2] == "compile":
+		return(baf_module_compile(argv[3]))
+	elif argv[2] == "search":
+		return(baf_module_search(argv[3]))
+	elif argv[2] == "install":
+		return(baf_module_install(argv[3]))
+	elif argv[2] == "enable":
+		return(baf_module_enable(argv[3]))
+	elif argv[2] == "disable":
+		return(baf_module_disable(argv[3]))
+
+	print baf_usage['module']
+	return(1)
+
+
+def baf_conf_read():
+
+	if not os.path.isfile(baf_file['conf']):
+		print " ! configuration file '" + baf_file['conf'] + "' not found!"
+		return(1)
+
+	f = open(baf_file['conf'], "r")
+	try:
+		for line in f.readlines():
+			k, v = line.rstrip("\n").rsplit("=")
+			baf_conf[k] = v
+	finally:
+		f.close()
+
+	return(0)
+
+def baf_conf_init():
+
+	f = open(baf_file['conf'], "w")
+	try:
+		for k, v in baf_templates[baf_file['conf']].iteritems():
+			f.write(k + "=" + v + "\n")
+	finally:
+		f.close()
+
+	return(0)
+
+def main():
+
+	if len(sys.argv) == 1:
+		print baf_usage['main']
+		sys.exit(1)
+
+	if sys.argv[1] == "create":
+		sys.exit(baf_create())
+	elif sys.argv[1] == "help":
+		print baf_usage['main']
+		sys.exit(0)
+
+	if baf_conf_read():
+		print " ! not a valid baf app, leaving."
+		sys.exit(1)
+
+	if sys.argv[1] == "make":
+		sys.exit(baf_make())
+	elif sys.argv[1] == "module":
+		sys.exit(baf_module(sys.argv))
+
+	print baf_usage['main']
+	sys.exit(1)
+
+if __name__ == "__main__":
+	main()
