@@ -94,7 +94,7 @@ baf_templates = {
 
 baf_usage = {
 		'main':"baf [help | create <name> | module <operation> | make]",
-		'module':"baf module [create | compile | delete] <name>"
+		'module':"baf module [create | compile | delete | enable | disable] <name>"
 }
 
 def baf_create_template():
@@ -409,8 +409,7 @@ def main():
 	elif sys.argv[1] == "help":
 		print baf_usage['main']
 		sys.exit(0)
-
-	if sys.argv[1] == "create":
+	elif sys.argv[1] == "create":
 		sys.exit(baf_create(sys.argv[2]))
 
 	if baf_conf_read():
