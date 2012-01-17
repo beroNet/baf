@@ -124,3 +124,19 @@ and type:
 
 This will compile and install all enabled modules, ask you to modify the file
 'pkginfo/VERSION' and create a tar.gz-archive in the directory 'pkg/'.
+
+
+= the baf configuration file =
+
+The root of an baf application-directory-structure contains a file named
+'.baf.conf'.
+
+Currently, this file only contains the path to the toolchain and the editor
+used, which is set to vim by default. If you want to use another editor,
+like SciTE or kWrite, just replace to path to vim with the path to your
+favorite editor.
+
+= That's all folks =
+Well, not at all. If you have questions, want to report problems or have suggestions, mail them to us:
+
+   support@beronet.com
