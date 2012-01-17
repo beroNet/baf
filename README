@@ -1,0 +1,126 @@
+This is a small introduction to the [b]ero*fix User[A]ppFS [f]ramework (baf).
+
+
+= Prerequisites for using baf =
+
+ * x86- or x86_64 PC running Linux
+ * installed build tools (package build-essential on Debian/Ubuntu)
+ * Python 2.6.0 or newer
+
+
+= Installing baf =
+
+After extracting the archive or cloning the repository, switch to the directory
+and type 'make install'. By default this will install baf to '/usr/local',
+so you need to be root for the installation or use 'sudo'.
+
+If you want to install baf to another directory, append 'PREFIX=/some/path'.
+So if you'd like to have it installed inside your home-directory, type:
+
+   make install PREFIX=~/some/path
+
+The baf-script will be installed in '~/some/path/bin', so make sure this
+directory is listed in your $PATH-environment variable!
+
+
+= Creating a first UserApp =
+
+To create an UserApp, just type:
+
+   baf create an_app
+
+This will create a directory structure and some files needed to create an
+UserApp in the subdirectory 'an_app'.
+
+= Modules =
+A bero*fix UserApp can contain several modules, which help you to manage the
+different components of your application.
+
+
+== Creating a module ==
+
+Switch to the directory mentioned above and type:
+
+   baf module create a_module
+
+This will create the skeleton for a module in the 'modules/' directory
+called 'a_module'.
+
+If you switch to the directory 'modules/a_module', you will see a few
+directories, a Makefile and an empty file called 'mod_files.lst'.
+
+The Makefile is set up to configure, compile and install applications that lie
+in the subdirectories of 'src/'. It is very basic, so it should be adjusted to
+the needs of the application you want to use. If your program has a configure
+script, you will have to add parameters to the 'CONF_OPTS' variable in this
+file and maybe adjust the 'MAKE_OPTS' and 'INST_OPTS' variables as well.
+The goal should be, that your application installs itself in
+'an_app/modules/a_module/'.
+
+The file 'mod_files.lst' should list the files to be installed in your UserApp.
+E.g. if the build-process of an application creates the following files:
+
+ * a_module
+  * bin
+   * a_bin
+  * libs
+   * a_lib.so
+   * b_lib.so
+
+you should add the following lines to this modules' 'mod_files.lst':
+
+   bin/a_bin=bin/a_bin
+   lib/a_lib.so=lib/a_lib.so
+   lib/b_lib.so=lib/b_lib.so
+
+All files listed here will be installed, all files not listed ignored.
+So you should check that you listed all files needed by your application.
+
+
+If you want to run an application as service, you might want to add an
+init-script to the init-subdirectory of your module. In the directory
+'a_module/init' is already a simple example, the file 'S00example'.
+
+Copy or rename it, but keep the scheme S[0-9]{2}[a-zA-Z]{*}. Edit it to the
+needs of your UserApp and keep in mind:
+The path on bero*fix will be '/userapp/an_app/'!
+
+If you want the init-script to be installed, please remember to add it
+to your 'mod_files.lst'!
+
+
+== En-/Disabling a module ==
+
+Modules are enabled by default, if you want to disable a module
+(it won't be compiled or installed) or re-enable it, you can do this with the
+following commands.
+
+To disable a module, type 'baf module disable a_module' while in root of
+your UserApp.
+
+To enable a module, type 'baf module enable a_module' while in root of
+your UserApp.
+
+
+== Compiling a module ==
+To compile a module, type 'baf module compile a_module' while in root of
+your UserApp.
+
+
+== Deleting a module ==
+To delete a module, type 'baf module delete a_module' while in root of
+your UserApp.
+
+
+= Creating an UserAppFS package =
+
+After you've configured your modules, you can create a package that contains
+all modules.
+
+To create a package switch to the root-directory of your UserApp-Repository
+and type:
+
+   baf make
+
+This will compile and install all enabled modules, ask you to modify the file
+'pkginfo/VERSION' and create a tar.gz-archive in the directory 'pkg/'.
