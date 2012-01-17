@@ -29,7 +29,8 @@ baf_dirs = {
 
 baf_file = {
 		'conf': ".baf.conf",
-		'vers': "VERSION"
+		'vers': "VERSION",
+		'init': "S00example"
 		}
 
 baf_templates = {
@@ -89,6 +90,33 @@ baf_templates = {
 			"\t\tcd $(CUR_DIR)/src/$$i/; \\\n",
 			"\t\tmake install $(INST_OPTS); \\\n",
 			"\tdone;\n"
+			],
+		baf_file['init']: [
+			"#!/bin/sh\n",
+			"# This is an example of an init-script for an UserApp\n\n",
+			"DISABLED=yes\n\n",
+			"if [ \"${DISABLED}\" = \"yes\" ]; then\n",
+			"\texit 0\n",
+			"fi\n\n",
+			"case \"${1}\" in\n",
+			"\tstart)\n",
+			"\t\techo \"Starting App...\"\n",
+			"BAF_INIT_BIN",
+			"\t\t;;\n",
+			"\tstop)\n",
+			"\t\techo \"Stopping App...\"\n",
+			"BAF_KILL_BIN",
+			"\t\t;;\n",
+			"\trestart)\n",
+			"\t\techo \"Restarting App...\"\n",
+			"\t\t${0} stop\n",
+			"\t\t${0} start\n",
+			"\t\t;;\n",
+			"\t*)\n"
+			"\t\techo \"Usage ${0} [start|stop|restart]\"\n",
+			"\t\texit 1\n",
+			"\t\t;;\n",
+			"esac\n"
 			]
 		}
 
@@ -255,7 +283,21 @@ def baf_module_create(name):
 			if line == "CUR_DIR\t\t:= $(shell pwd)\n":
 				f.write("BAF_DIR\t\t:= " + baf_conf['toolchain'] + "\n\n")
 	finally:
-			f.close()
+		f.close()
+
+	f = open(baf_dirs['modules']['dir'] + "/" + name + "/" + baf_dirs['module']['sub'][4] + "/" + baf_file['init'], "w")
+	try:
+		for line in baf_templates[baf_file['init']]:
+			if line == "BAF_INIT_BIN":
+				f.write("\t\t/userapp/" + os.path.basename(os.getcwd()) + "/bin/example\n")
+			elif line == "BAF_KILL_BIN":
+				f.write("\t\tkillall -9 /userapp/" + os.path.basename(os.getcwd()) + "/bin/example\n")
+			else:
+				f.write(line)
+	finally:
+		f.close()
+
+	os.chmod(baf_dirs['modules']['dir'] + "/" + name + "/" + baf_dirs['module']['sub'][4] + "/" + baf_file['init'], 0755)
 
 	open(baf_dirs['modules']['dir'] + "/" + name + "/" + "mod_files.lst", "w").close()
 
