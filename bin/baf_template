@@ -376,11 +376,11 @@ def baf_module_disable(name):
 
 	return(0)
 
-def baf_module_search(name):
-
-	print " ! this functionality has not been implemented yet!"
-
-	return(0)
+#def baf_module_search(name):
+#
+#	print " ! this functionality has not been implemented yet!"
+#
+#	return(0)
 
 def baf_module(argv):
 
@@ -411,8 +411,8 @@ def baf_module(argv):
 		return(baf_module_delete(argv[3]))
 	elif argv[2] == "compile":
 		return(baf_module_compile(argv[3]))
-	elif argv[2] == "search":
-		return(baf_module_search(argv[3]))
+#	elif argv[2] == "search":
+#		return(baf_module_search(argv[3]))
 	elif argv[2] == "install":
 		return(baf_module_install(argv[3]))
 	elif argv[2] == "enable":
