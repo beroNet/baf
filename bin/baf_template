@@ -1,4 +1,16 @@
 #!/usr/bin/env python
+#
+# Template for the main management-script of the berofix UserApp framework (baf)
+#
+# Copyright (C) 2012 beroNet GmbH
+#
+# Author: Florian Kraatz <fk@beronet.com>
+#
+# If you have questions or want to report problems with this software,
+# please write a mail to:
+#
+#   support@beronet.com
+#
 
 import os, sys, string, shutil, datetime, tarfile, re, tempfile
 
