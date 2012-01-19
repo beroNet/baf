@@ -12,7 +12,7 @@
 #   support@beronet.com
 #
 
-import os, sys, string, shutil, datetime, tarfile, re, tempfile
+import os, sys, string, shutil, datetime, tarfile, re, tempfile, urllib2
 
 baf_conf = {}
 
@@ -58,7 +58,8 @@ baf_templates = {
 
 		baf_file['conf']: {
 			'editor': "/usr/bin/vim",
-			'toolchain': "BAF_TOOLCHAIN_BASEPATH/share/baf"
+			'toolchain': "BAF_TOOLCHAIN_BASEPATH/share/baf",
+			'repository': "http://developer.beronet.com/baf-modules/modlist.txt"
 			},
 		'module-Makefile': [
 			"# Makefile skeleton for baf modules\n\n",
@@ -364,11 +365,18 @@ def baf_module_install(name):
 	f = open(baf_dirs['modules']['dir'] + "/" + name + "/mod_files.lst", "r")
 	try:
 		for line in f.readlines():
-			src_tgt = line.split("=")
+			src_tgt = line.split("=>")
 			src = (baf_dirs['modules']['dir']+ "/" + name + "/" + src_tgt[0]).rstrip('\n')
 			tgt = (baf_dirs['work']['dir'] + "/" + baf_dirs['work']['sub'] + "/" + src_tgt[1]).rstrip('\n')
-			print "   * copying file '" + src + "' to '" + tgt + "'..."
-			shutil.copy(src, tgt)
+
+			if not os.path.exists(src):
+				print "   ! file '" + src + "' listed in " + name + "'s 'mod_files.lst' does not exist, skipping!"
+			else:
+				if not os.path.exists(os.path.dirname(tgt)):
+					os.makedirs(os.path.dirname(tgt))
+
+				print "   * copying file '" + src + "' to '" + tgt + "'..."
+				shutil.copy(src, tgt)
 	finally:
 		f.close()
 
@@ -388,11 +396,106 @@ def baf_module_disable(name):
 
 	return(0)
 
-#def baf_module_search(name):
-#
-#	print " ! this functionality has not been implemented yet!"
-#
-#	return(0)
+def baf_module_get_pkgs(repo):
+
+	sect = ['name', 'file', 'url', 'desc']
+	lines = []
+	pkgs = []
+
+	mod_lst = urllib2.urlopen(repo)
+
+	for item in mod_lst.readlines():
+		if not item[0] == '#' and not item[0] == '\n':
+			lines.append(item.rstrip('\n'))
+	mod_lst.close()
+
+	i = 0
+	for line in lines:
+		pkg = {}
+		j = 0
+		for item in line.rsplit(','):
+			pkg[sect[j]] = item.strip()
+			j += 1
+		pkgs.append(pkg)
+		i += 1
+
+	return(pkgs)
+
+def baf_module_pkg_print(pkg):
+
+	for k, v in pkg.iteritems():
+		if k == 'desc':
+			print " " + k + ": " + v.strip('"')
+		else:
+			print " " + k + ": " + v
+
+	print ""
+
+	return(0)
+
+def baf_module_pkg_list():
+
+	pkgs = baf_module_get_pkgs(baf_conf['repository'])
+
+	print "Listing modules from " + baf_conf['repository'] + ":\n"
+
+	for pkg in pkgs:
+		baf_module_pkg_print(pkg)
+
+	return(0)
+
+def baf_module_pkg_search(term):
+
+	ret = 0
+
+	pkgs = baf_module_get_pkgs(baf_conf['repository'])
+
+	print "Searching for '" + term + "' in " + baf_conf['repository'] + ".\n"
+	for pkg in pkgs:
+		for k, v in pkg.iteritems():
+			if term in v:
+				baf_module_pkg_print(pkg)
+				ret += 1
+				break
+	print "Found " + str(ret) + " modules for search term '" + term + "'.\n"
+
+	return(ret)
+
+def baf_module_pkg_fetch(pkg):
+
+	if os.path.exists(baf_dirs['modules']['dir'] + "/" + pkg['name']):
+		shutil.rmtree(baf_dirs['modules']['dir'] + "/" + pkg['name'])
+
+	u = urllib2.urlopen(pkg['url'])
+	try:
+		f = open("/tmp/" + pkg['file'], "w")
+		try:
+			f.write(u.read())
+		finally:
+			f.close()
+	finally:
+		u.close()
+
+	tf = tarfile.open("/tmp/" + pkg['file'], "r:gz")
+	try:
+		tf.extractall(path=baf_dirs['modules']['dir'])
+	finally:
+		tf.close()
+
+def baf_module_pkg_install(pkg_name):
+
+	pkgs = baf_module_get_pkgs(baf_conf['repository'])
+
+	for pkg in pkgs:
+		if pkg['name'] == pkg_name:
+			baf_module_pkg_fetch(pkg)
+			print "Downloaded and installed module '" + pkg['name'] + "'."
+			return(0)
+
+	print " ! Could not find module '" + pkg_name + "' for install!"
+	print " ! Please search for the correct name of the module you want to install!"
+
+	return(1)
 
 def baf_module(argv):
 
@@ -404,16 +507,23 @@ def baf_module(argv):
 		print baf_usage['module']
 		return(0)
 
-	if len(argv) < 4:
-		print baf_usage['module']
-		return(1)
-
 	if baf_conf_read():
 		print " ! not a valid baf app, leaving."
 		return(1)
 
+	if argv[2] == "list":
+		return(baf_module_pkg_list())
+
+	if len(argv) < 4:
+		print baf_usage['module']
+		return(1)
+
 	if argv[2] == "create":
 		return(baf_module_create(argv[3]))
+	elif argv[2] == "search":
+		return(baf_module_pkg_search(argv[3]))
+	elif argv[2] == "install":
+		return(baf_module_pkg_install(argv[3]))
 
 	if not os.path.exists(baf_dirs['modules']['dir'] + "/" + argv[3]):
 		print " ! module '" + argv[3] + "' does not exist, leaving."
@@ -423,10 +533,6 @@ def baf_module(argv):
 		return(baf_module_delete(argv[3]))
 	elif argv[2] == "compile":
 		return(baf_module_compile(argv[3]))
-#	elif argv[2] == "search":
-#		return(baf_module_search(argv[3]))
-	elif argv[2] == "install":
-		return(baf_module_install(argv[3]))
 	elif argv[2] == "enable":
 		return(baf_module_enable(argv[3]))
 	elif argv[2] == "disable":

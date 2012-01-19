@@ -57,7 +57,11 @@ file and maybe adjust the 'MAKE_OPTS' and 'INST_OPTS' variables as well.
 The goal should be, that your application installs itself in
 'an_app/modules/a_module/'.
 
-The file 'mod_files.lst' should list the files to be installed in your UserApp.
+The file 'mod_files.lst' should list the files to be installed in your UserApp
+in the following way:
+
+   src/file=>tgt/file
+
 E.g. if the build-process of an application creates the following files:
 
  * a_module
@@ -69,9 +73,9 @@ E.g. if the build-process of an application creates the following files:
 
 you should add the following lines to this modules' 'mod_files.lst':
 
-   bin/a_bin=bin/a_bin
-   lib/a_lib.so=lib/a_lib.so
-   lib/b_lib.so=lib/b_lib.so
+   bin/a_bin=>bin/a_bin
+   lib/a_lib.so=>lib/a_lib.so
+   lib/b_lib.so=>lib/b_lib.so
 
 All files listed here will be installed, all files not listed ignored.
 So you should check that you listed all files needed by your application.
