@@ -31,7 +31,7 @@ baf_dirs = {
 			'dir': "modules"
 			},
 		'module': {
-			'sub': ["bin", "lib", "conf", "www", "init", "src"]
+			'sub': ["bin", "lib", "conf", "www", "init", "src", "cron"]
 			},
 		'work': {
 			'dir': "work",
