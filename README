@@ -23,6 +23,17 @@ The baf-script will be installed in '~/some/path/bin', so make sure this
 directory is listed in your $PATH-environment variable!
 
 
+= Uninstalling baf =
+
+To uninstall baf, switch to the directory where you have extracted the
+baf-archive and type:
+
+  make uninstall
+
+This will uninstall baf from the location saved to 'INSTALL.LOCATION' while
+it was installed.
+
+
 = Creating a first UserApp =
 
 To create an UserApp, just type:
@@ -130,7 +141,36 @@ This will compile and install all enabled modules, ask you to modify the file
 'pkginfo/VERSION' and create a tar.gz-archive in the directory 'pkg/'.
 
 
-= the baf configuration file =
+= the VERSION file =
+
+Before 'baf make' compiles your modules the file 'pkginfo/VERSION' will be
+opened with the editor configured in '.baf.conf' and you should edit this
+file. In this file are several variables to be set.
+
+The variable 'NAME' sets a simple name for your application, it can consist
+of letters, numbers and underscore. Please do not use spaces.
+
+The variable 'VERSION' sets the version of your application. This can be an
+integer of your choice.
+
+The variables 'NEED_FIRMWARE', 'NEED_KERNEL' and 'NEED_ROOTFS' will be
+evaluated while berofix installs your application. Set it to your needs:
+E.g. if your application requires an appfs version 2 to be installed,
+set 'NEED_FIRMWARE' to 2.
+
+The variable 'SLOTS' sets the slots used by your application. One slot
+represents ~1 megabyte of flash used by your application. The userappfs
+provides up to eight slots, so try to keep your application as small as
+possible.
+
+The variable 'TYPE' sets the type of this package. This variable does not
+need to be changed.
+
+The variable 'DESCRIPTION' should contain a small description of your
+application.
+
+
+= The baf configuration file =
 
 The root of an baf application-directory-structure contains a file named
 '.baf.conf'.
