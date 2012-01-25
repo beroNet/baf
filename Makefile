@@ -1,6 +1,7 @@
 
 CUR_DIR		:= $(shell pwd)
 USER		:= $(shell whoami)
+INST_LOC_FIL	:= $(CUR_DIR)/INSTALL.LOCATION
 
 ifndef PREFIX
 	PREFIX = /usr/local
@@ -23,6 +24,7 @@ install: check
 		echo "You need to be root to install baf into $(PREFIX)!"; \
 		exit 1; \
 	fi
+	@echo "$(PREFIX)" > $(INST_LOC_FIL)
 	@echo -n " * Installing components for the build-environment: "
 	@install -o $(USER) -g $(GROUP) -m 0755 -d $(PREFIX)/share/baf
 	@cp -R $(CUR_DIR)/build/* $(PREFIX)/share/baf/; \
@@ -38,14 +40,16 @@ install: check
 	@echo "Done."
 
 uninstall:
-	@if [ -z "$(shell echo $(PREFIX) | grep $(USER))" ] && [ "$(USER)" != "root" ]; then \
-		echo "You need to be root to uninstall baf from $(PREFIX)!"; \
+	@INSTLOC=`cat $(INST_LOC_FIL)`; \
+	if [ -z "`echo $$INSTLOC | grep $(USER)`" ] && [ "$(USER)" != "root" ]; then \
+		echo "You need to be root to uninstall baf from $$INSTLOC!"; \
 		exit 1; \
-	fi
-	@echo -n " * Removing baf: "
-	@rm -f $(PREFIX)/bin/baf
-	@echo "Done."
-	@echo -n " * Removing components for the build-environment: "
-	@rm -rf $(PREFIX)/share/baf
-	@echo "Done."
+	fi; \
+	echo -n " * Removing baf: "; \
+	rm -f $$INSTLOC/bin/baf; \
+	echo "Done."; \
+	echo -n " * Removing components for the build-environment: "; \
+	rm -rf $$INSTLOC/share/baf; \
+	echo "Done."
+	@rm -f $(INST_LOC_FIL)
 
