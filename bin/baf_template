@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Template for the main management-script of the berofix UserApp framework (baf)
+# Management-script of the berofix UserApp framework (baf)
 #
 # Copyright (C) 2012 beroNet GmbH
 #
@@ -52,8 +52,9 @@ baf_templates = {
 			'DESCRIPTION': "\"default package\"",
 			'SLOTS': "1",
 			'NEED_KERNEL': "1",
-			'NEED_ROOTFS': "1",
-			'NEED_FIRMWARE': "1"
+			'NEED_FIRMWARE': "1",
+			'NEED_ROOTFS': "3",
+			'NEED_APPFS': "2"
 			},
 
 		baf_file['conf']: {
@@ -140,28 +141,46 @@ baf_usage = {
 
 def baf_create_template():
 
-	os.mkdir(baf_dirs['template']['dir'])
-
-	for sub_dir in baf_dirs['template']['sub']:
-		os.mkdir(baf_dirs['template']['dir'] + "/" + sub_dir)
-
-	return(0)
+	try:
+		print " * creating directory 'template'..."
+		os.mkdir(baf_dirs['template']['dir'])
+	except OSError:
+		print " ! Could not create '" + baf_dirs['template']['dir'] + "', leaving."
+		return(1)
+	else:
+		for sub_dir in baf_dirs['template']['sub']:
+			try:
+				os.mkdir(baf_dirs['template']['dir'] + "/" + sub_dir)
+			except OSError:
+				print " ! Could not create '" + baf_dirs['template']['dir'] + "/" + sub_dir + "', leaving."
+				return(1)
+	finally:
+		return(0)
 
 def baf_create_pkginfo():
 
-	os.mkdir(baf_dirs['pkginfo']['dir'])
-
-	f = open(baf_dirs['pkginfo']['dir'] + "/" + baf_file['vers'], "w")
 	try:
-		f.write("NAME=" + os.path.basename(os.getcwd()) + "\n");
-		for k, v in baf_templates[baf_file['vers']].iteritems():
-			f.write(k + "=" + v + "\n")
+		print " * creating directory 'pkginfo'..."
+		os.mkdir(baf_dirs['pkginfo']['dir'])
+	except OSError:
+		print " ! Could not create '" + baf_dirs['template']['dir'] + "', leaving."
+		return(1)
+	else:
+		f_name = baf_dirs['pkginfo']['dir'] + "/" + baf_file['vers']
+		try:
+			f = open(f_name, "w")
+		except IOError:
+			print " ! Could not open '" + f_name + "' for writing, leaving."
+			return(1);
+		else:
+			f.write("NAME=" + os.path.basename(os.getcwd()) + "\n");
+			for k, v in baf_templates[baf_file['vers']].iteritems():
+				f.write(k + "=" + v + "\n")
 
-		f.flush()
+			f.flush()
+			f.close()
 	finally:
-		f.close()
-
-	return(0)
+		return(0)
 
 def baf_create(name):
 
@@ -173,44 +192,64 @@ def baf_create(name):
 		print " ! a directory named '" + name + "' already exists, leaving."
 		return(1)
 
-	os.mkdir(name)
+	try:
+		os.mkdir(name)
+	except OSError:
+		print " ! Could not create '" + name + "', leaving."
+		return(1)
+	else:
+		os.chdir(name)
+		baf_conf_init()
 
-	os.chdir(name)
+		try:
+			print " * creating directory 'modules'..."
+			os.mkdir(baf_dirs['modules']['dir'])
+		except OSError:
+			print " ! Could not create " + baf_dirs['modules']['dir'] + ", leaving."
+			return(1)
 
-	baf_conf_init()
+		try:
+			print " * creating directory 'pkg'..."
+			os.mkdir(baf_dirs['pkg']['dir'])
+		except OSError:
+			print " ! Could not create " + baf_dirs['pkg']['dir'] + ", leaving."
+			return(1)
 
-	print " * creating directory 'modules'..."
-	os.mkdir(baf_dirs['modules']['dir'])
+		if baf_create_pkginfo():
+			return(1)
 
-	print " * creating directory 'pkg'..."
-	os.mkdir(baf_dirs['pkg']['dir'])
-
-	print " * creating directory 'pkginfo'..."
-	baf_create_pkginfo()
-
-	print " * creating directory 'template'..."
-	baf_create_template()
-
-	return(0)
+		if baf_create_template():
+			return(1)
+	finally:
+		return(0)
 
 def baf_info_update():
 
-	os.system(baf_conf['editor'] + " " + baf_dirs['pkginfo']['dir'] + "/" + baf_file['vers'])
+	cmd = baf_conf['editor'] + " " + baf_dirs['pkginfo']['dir'] + "/" + baf_file['vers']
+	try:
+		os.system(cmd)
+	except OSError:
+		print " ! Could not execute '" + cmd + "', leaving."
+		print " ! Please check the editor-setting in '.baf.conf'."
+		return(1)
 
 	return(0)
 
 def baf_package_get_name():
 
-	f = open(baf_dirs['pkginfo']['dir'] + "/" + baf_file['vers'], "r")
+	f_name = baf_dirs['pkginfo']['dir'] + "/" + baf_file['vers']
 	try:
+		f = open(f_name, "r")
+	except IOError:
+		print " ! Could not open '" + f_name + "' for reading, leaving."
+		return(False)
+	else:
 		c = f.read()
-	finally:
 		f.close()
 
 	m = re.search('(?<=NAME\=).+', c)
 
 	return(m.group(0))
-
 
 def baf_package_add_file_list(pkg):
 
@@ -229,17 +268,25 @@ def baf_package_add_file_list(pkg):
 
 	return(0)
 
-
 def baf_package_create():
 
 	pkg_name = datetime.datetime.now().strftime(baf_dirs['pkg']['dir'] + "/userapp-%Y-%m-%d_%H_%M_%S.tar.gz")
 
-	pkg = tarfile.open(pkg_name, "w:gz")
 	try:
-		pkg.add(baf_dirs['work']['dir'] + "/" + baf_dirs['work']['sub'] + "/", arcname= baf_package_get_name())
+		pkg = tarfile.open(pkg_name, "w:gz")
+	except TarError:
+		print " ! Could not open " + pkg_name + " for writing, leaving."
+		return(1)
+	else:
+		repo_name=baf_package_get_name()
+		if repo_name is False:
+			print " ! Could not retrieve name of repository, leaving."
+			pkg.close()
+			return(1)
+
+		pkg.add(baf_dirs['work']['dir'] + "/" + baf_dirs['work']['sub'] + "/", arcname=repo_name)
 		pkg.add(baf_dirs['pkginfo']['dir'] + "/" + baf_file['vers'], arcname=baf_file['vers'])
 		baf_package_add_file_list(pkg)
-	finally:
 		pkg.close()
 
 	return(0)
@@ -254,23 +301,33 @@ def baf_make():
 		print " * found old 'work' directory, removing."
 		shutil.rmtree(baf_dirs['work']['dir'])
 
-	baf_info_update()
+	if baf_info_update():
+		return(1)
 
-	print " * creating new 'work' directory..."
-	os.mkdir(baf_dirs['work']['dir'])
-	shutil.copytree(baf_dirs['template']['dir'], baf_dirs['work']['dir'] + "/" + baf_dirs['work']['sub'])
+	try:
+		print " * creating new 'work' directory..."
+		os.mkdir(baf_dirs['work']['dir'])
+	except OSError:
+		print " ! Could not create '" + baf_dirs['work']['dir'] + "', leaving."
+		return(1)
+	else:
+		shutil.copytree(baf_dirs['template']['dir'], baf_dirs['work']['dir'] + "/" + baf_dirs['work']['sub'])
 
-	modules = os.listdir(baf_dirs['modules']['dir'])
 	print " * compiling modules..."
+	modules = os.listdir(baf_dirs['modules']['dir'])
 	for module in modules:
 		baf_module_compile(module)
 
 	print " * installing modules..."
 	for module in modules:
-		baf_module_install(module)
+		if baf_module_install(module):
+			print " ! Could not install module '" + module + "', leaving."
+			return(1)
 
 	print " * creating package..."
-	baf_package_create()
+	if baf_package_create():
+		print " ! Could not create package, leaving."
+		return(1)
 
 	return(0)
 
@@ -284,22 +341,41 @@ def baf_module_create(name):
 		print " ! module '" + name + "' already exists, leaving."
 		return(1)
 
-	print " * creating module '" + name + "'..."
-	os.mkdir(baf_dirs['modules']['dir'] + "/" + name)
-	for sub_dir in baf_dirs['module']['sub']:
-		os.mkdir(baf_dirs['modules']['dir'] + "/" + name + "/" + sub_dir)
-
-	f = open(baf_dirs['modules']['dir'] + "/" + name + "/Makefile", "w")
 	try:
+		print " * creating module '" + name + "'..."
+		os.mkdir(baf_dirs['modules']['dir'] + "/" + name)
+	except OSError:
+		print " ! Could not create '" + baf_dirs['modules']['dir'] + "/" + name + "', leaving."
+		return(1)
+	else:
+		for sub_dir in baf_dirs['module']['sub']:
+			dir_name = baf_dirs['modules']['dir'] + "/" + name + "/" + sub_dir
+			try:
+				os.mkdir(dir_name)
+			except OSError:
+				print " ! Could not create '" + dir_name + "', leaving."
+				return(1)
+
+	f_name = baf_dirs['modules']['dir'] + "/" + name + "/Makefile"
+	try:
+		f = open(f_name, "w")
+	except IOError:
+		print " ! Could not open '" + f_name + "' for writing, leaving."
+		return(1)
+	else:
 		for line in baf_templates['module-Makefile']:
 			f.write(line)
 			if line == "CUR_DIR\t\t:= $(shell pwd)\n":
 				f.write("BAF_DIR\t\t:= " + baf_conf['toolchain'] + "\n\n")
-	finally:
 		f.close()
 
-	f = open(baf_dirs['modules']['dir'] + "/" + name + "/" + baf_dirs['module']['sub'][4] + "/" + baf_file['init'], "w")
+	f_name = baf_dirs['modules']['dir'] + "/" + name + "/" + baf_dirs['module']['sub'][4] + "/" + baf_file['init']
 	try:
+		f = open(f_name, "w")
+	except IOError:
+		print " ! Could not open '" + f_name + "' for writing, leaving."
+		return(1)
+	else:
 		for line in baf_templates[baf_file['init']]:
 			if line == "BAF_INIT_BIN":
 				f.write("\t\t/userapp/" + os.path.basename(os.getcwd()) + "/bin/example\n")
@@ -307,7 +383,6 @@ def baf_module_create(name):
 				f.write("\t\tkillall -9 /userapp/" + os.path.basename(os.getcwd()) + "/bin/example\n")
 			else:
 				f.write(line)
-	finally:
 		f.close()
 
 	os.chmod(baf_dirs['modules']['dir'] + "/" + name + "/" + baf_dirs['module']['sub'][4] + "/" + baf_file['init'], 0755)
@@ -318,7 +393,7 @@ def baf_module_create(name):
 
 def baf_module_delete(name):
 
-	if os.path.isdir(baf_dirs['modules']['dir'] + "/" + name) == False:
+	if os.path.isdir(baf_dirs['modules']['dir'] + "/" + name) is False:
 		print " ! module '" + name + "' does not exist, leaving."
 		return(1)
 
@@ -343,7 +418,7 @@ def baf_module_compile(name):
 
 	print "  * compiling module '" + name + "'..."
 	ret = os.system("make -s")
-	if ret == 0:
+	if ret is 0:
 		ret = os.system("make install -s")
 
 	os.chdir(base_dir)
@@ -362,28 +437,41 @@ def baf_module_install(name):
 
 	print "  * installing module '" + name + "'..."
 
-	f = open(baf_dirs['modules']['dir'] + "/" + name + "/mod_files.lst", "r")
+	f_name = baf_dirs['modules']['dir'] + "/" + name + "/mod_files.lst"
 	try:
+		f = open(f_name, "r")
+	except IOError:
+		print " ! Could not open '" + f_name + "' for writing, leaving."
+		return(1)
+	else:
+		i = 0
 		for line in f.readlines():
-			src_tgt = line.split("=>")
-			src = (baf_dirs['modules']['dir']+ "/" + name + "/" + src_tgt[0]).rstrip('\n')
-			tgt = (baf_dirs['work']['dir'] + "/" + baf_dirs['work']['sub'] + "/" + src_tgt[1]).rstrip('\n')
+			i += 1
+			if len(line.rstrip('\n')) is not 0 and line[0] is not '#':
+				src_tgt = line.split("=>")
+				if len(src_tgt) is not 2:
+					print "   ! File '" + f_name + "' malformatted at line " + str(i) + ", leaving."
+					f.close()
+					return(1)
 
-			if not os.path.exists(src):
-				print "   ! file '" + src + "' listed in " + name + "'s 'mod_files.lst' does not exist, skipping!"
-			else:
-				if not os.path.exists(os.path.dirname(tgt)):
-					os.makedirs(os.path.dirname(tgt))
+				src = (baf_dirs['modules']['dir']+ "/" + name + "/" + src_tgt[0]).rstrip('\n')
+				tgt = (baf_dirs['work']['dir'] + "/" + baf_dirs['work']['sub'] + "/" + src_tgt[1]).rstrip('\n')
 
-				print "   * copying file '" + src + "' to '" + tgt + "'..."
-				shutil.copy(src, tgt)
-	finally:
+				if not os.path.exists(src):
+					print "   ! file '" + src + "' listed in '" + f_name + "' does not exist, skipping!"
+				else:
+					if not os.path.exists(os.path.dirname(tgt)):
+						os.makedirs(os.path.dirname(tgt))
+
+					print "   * copying file '" + src + "' to '" + tgt + "'..."
+					shutil.copy(src, tgt)
 		f.close()
 
 	return(0)
 
 def baf_module_enable(name):
 
+	print " * enabling module '" + name + "'..."
 	if os.path.exists(baf_dirs['modules']['dir'] + "/" + name + "/DISABLED"):
 		os.remove(baf_dirs['modules']['dir'] + "/" + name + "/DISABLED")
 
@@ -391,6 +479,7 @@ def baf_module_enable(name):
 
 def baf_module_disable(name):
 
+	print " * disabling module '" + name + "'..."
 	if not os.path.exists(baf_dirs['modules']['dir'] + "/" + name + "/DISABLED"):
 		open(baf_dirs['modules']['dir'] + "/" + name + "/DISABLED", "w").close()
 
@@ -402,12 +491,16 @@ def baf_module_get_pkgs(repo):
 	lines = []
 	pkgs = []
 
-	mod_lst = urllib2.urlopen(repo)
-
-	for item in mod_lst.readlines():
-		if not item[0] == '#' and not item[0] == '\n':
-			lines.append(item.rstrip('\n'))
-	mod_lst.close()
+	try:
+		mod_lst = urllib2.urlopen(repo)
+	except urllib2.HTTPError, e:
+		print " ! Could not open '" + repo + "' (HTTP Error " + str(e.code) + "), leaving."
+		return(False)
+	else:
+		for item in mod_lst.readlines():
+			if len(item.rstrip('\n')) is not 0 and item[0] is not '#':
+				lines.append(item.rstrip('\n'))
+		mod_lst.close()
 
 	i = 0
 	for line in lines:
@@ -436,6 +529,8 @@ def baf_module_pkg_print(pkg):
 def baf_module_pkg_list():
 
 	pkgs = baf_module_get_pkgs(baf_conf['repository'])
+	if pkgs is False:
+		return(1)
 
 	print "Listing modules from " + baf_conf['repository'] + ":\n"
 
@@ -449,6 +544,8 @@ def baf_module_pkg_search(term):
 	ret = 0
 
 	pkgs = baf_module_get_pkgs(baf_conf['repository'])
+	if pkgs is False:
+		return(ret)
 
 	print "Searching for '" + term + "' in " + baf_conf['repository'] + ".\n"
 	for pkg in pkgs:
@@ -466,21 +563,33 @@ def baf_module_pkg_fetch(pkg):
 	if os.path.exists(baf_dirs['modules']['dir'] + "/" + pkg['name']):
 		shutil.rmtree(baf_dirs['modules']['dir'] + "/" + pkg['name'])
 
-	u = urllib2.urlopen(pkg['url'])
 	try:
-		f = open("/tmp/" + pkg['file'], "w")
+		u = urllib2.urlopen(pkg['url'])
+	except urllib2.HTTPError, e:
+		print " ! Could not open '" + pkg['url'] + "' (HTTP Error " + str(e.code) + "), leaving."
+		return(1)
+	else:
 		try:
+			f = open("/tmp/" + pkg['file'], "w")
+		except IOError:
+			print " ! Could not open '/tmp/" + pkg['file'] + "' for writing."
+			u.close()
+			return(1)
+		else:
 			f.write(u.read())
-		finally:
 			f.close()
-	finally:
 		u.close()
 
-	tf = tarfile.open("/tmp/" + pkg['file'], "r:gz")
 	try:
+		tf = tarfile.open("/tmp/" + pkg['file'], "r:gz")
+	except TarError:
+		print " ! Could not open '/tmp/" + pkg['file'] + "' for reading, leaving."
+		return(1)
+	else:
 		tf.extractall(path=baf_dirs['modules']['dir'])
-	finally:
 		tf.close()
+
+	return(0)
 
 def baf_module_pkg_install(pkg_name):
 
@@ -489,7 +598,7 @@ def baf_module_pkg_install(pkg_name):
 	for pkg in pkgs:
 		if pkg['name'] == pkg_name:
 			baf_module_pkg_fetch(pkg)
-			print "Downloaded and installed module '" + pkg['name'] + "'."
+			print " * Downloaded and installed module '" + pkg['name'] + "'."
 			return(0)
 
 	print " ! Could not find module '" + pkg_name + "' for install!"
@@ -499,7 +608,7 @@ def baf_module_pkg_install(pkg_name):
 
 def baf_module(argv):
 
-	if len(argv) == 2:
+	if len(argv) is 2:
 		print baf_usage['module']
 		return(1)
 
@@ -541,40 +650,46 @@ def baf_module(argv):
 	print baf_usage['module']
 	return(1)
 
-
 def baf_conf_read():
 
 	if not os.path.isfile(baf_file['conf']):
-		print " ! configuration file '" + baf_file['conf'] + "' not found!"
+		print " ! Configuration file '" + baf_file['conf'] + "' not found, leaving."
 		return(1)
 
-	f = open(baf_file['conf'], "r")
 	try:
+		f = open(baf_file['conf'], "r")
+	except IOError:
+		print " ! Configuration file '" + baf_file['conf'] + "' not readable, leaving."
+		return(1)
+	else:
 		for line in f.readlines():
-			k, v = line.rstrip("\n").rsplit("=")
-			baf_conf[k] = v
-	finally:
+			if len(line.rstrip('\n')) is not 0 and line[0] is not '#':
+				k, v = line.rstrip("\n").rsplit("=")
+				baf_conf[k] = v
 		f.close()
 
 	return(0)
 
 def baf_conf_init():
 
-	f = open(baf_file['conf'], "w")
 	try:
+		f = open(baf_file['conf'], "w")
+	except IOError:
+		print " ! Could not open '" + baf_file['conf'] + "' for writing, leaving."
+		return(1)
+	else:
 		for k, v in baf_templates[baf_file['conf']].iteritems():
 			f.write(k + "=" + v + "\n")
-	finally:
 		f.close()
 
 	return(0)
 
 def main():
 
-	if len(sys.argv) == 1:
+	if len(sys.argv) is 1:
 		print baf_usage['main']
 		sys.exit(1)
-	elif len(sys.argv) == 2:
+	elif len(sys.argv) is 2:
 		if sys.argv[1] == "help":
 			print baf_usage['main']
 			sys.exit(0)
