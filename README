@@ -122,6 +122,24 @@ To compile a module, type 'baf module compile a_module' while in root of
 your UserApp.
 
 
+== Installing a preconfigured module ==
+
+baf provides a mechanism to install preconfigured modules from a repository.
+The repository used is configured in the file '.baf.conf'.
+
+Modules provided by a repository can be listed with the command:
+
+   baf module list
+
+To search a module, enter the command:
+
+   baf module search <searchterm>
+
+And to install a module, use:
+
+   baf module install <modulename>
+
+
 == Deleting a module ==
 To delete a module, type 'baf module delete a_module' while in root of
 your UserApp.
@@ -153,10 +171,10 @@ of letters, numbers and underscore. Please do not use spaces.
 The variable 'VERSION' sets the version of your application. This can be an
 integer of your choice.
 
-The variables 'NEED_FIRMWARE', 'NEED_KERNEL' and 'NEED_ROOTFS' will be
-evaluated while berofix installs your application. Set it to your needs:
-E.g. if your application requires an appfs version 2 to be installed,
-set 'NEED_FIRMWARE' to 2.
+The variables 'NEED_FIRMWARE', 'NEED_KERNEL', 'NEED_ROOTFS' and 'NEED_APPFS'
+will be evaluated while berofix installs your application.
+Set it to your needs: E.g. if your application requires an appfs
+version 2 to be installed, set 'NEED_APPFS' to 2.
 
 The variable 'SLOTS' sets the slots used by your application. One slot
 represents ~1 megabyte of flash used by your application. The userappfs
@@ -175,10 +193,14 @@ application.
 The root of an baf application-directory-structure contains a file named
 '.baf.conf'.
 
-Currently, this file only contains the path to the toolchain and the editor
-used, which is set to vim by default. If you want to use another editor,
-like SciTE or kWrite, just replace to path to vim with the path to your
-favorite editor.
+This file contains the path to the toolchain and the editor used, which
+is set to vim by default. If you want to use another editor, like SciTE
+or kWrite, just replace to path to vim with the path to your favorite editor.
+
+The third configuration option saved in this file is the url to the
+repository used to install pre-configured modules. Bey default this points
+to: http://developer.beronet.com/baf-modules/modlist.txt
+
 
 = That's all folks =
 Well, not at all. If you have questions, want to report problems or have suggestions, mail them to us:
