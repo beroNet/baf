@@ -134,10 +134,61 @@ baf_templates = {
 			]
 		}
 
-baf_usage = {
-		'main':"baf [help | create <name> | module <operation> | make]",
-		'module':"baf module [create | compile | delete | enable | disable] <name>"
-}
+baf_help = {
+		'main': {
+			'main': "Usage:   baf [create <appname> | module <operation> <modulename> | make]\n\n" +
+				"To get more info about a specific command, type:\n" +
+				"         baf help <command>"
+		},
+		'create': {
+			'main': "Usage:   baf create <appname>\n\n" +
+				"Creates a new application in subdirectory <appname>."
+		},
+		'make': {
+			'main': "Usage:   baf make\n\n" +
+				"Compiles all enabled modules and creates an archive of this UserApp in '<appname>/pkg'."
+		},
+		'module' : {
+			'main':		"Usage:   baf module [create | compile | delete | disable | enable | install] <appname>\n" +
+					"         baf module list\n" +
+					"         baf module search <searchterm>\n\n" +
+					"To get more info about a specific command, type:\n" +
+					"         baf help module <command>",
+			'create':	"Usage:   baf module create <modulename>\n\n" +
+					"Creates a new module.",
+			'compile':	"Usage:   baf module compile <modulename>\n\n" +
+					"Compiles module given by <modulename>.",
+			'delete':	"Usage:   baf module delete <modulename>\n\n" +
+					"Deletes module given by <modulename>",
+			'disable':	"Usage:   baf module disable <modulename>\n\n" +
+					"Disables module given by <modulename>, a disabled module will not be considered by 'baf make'.",
+			'enable':	"Usage:   baf module enable <modulename>\n\n" +
+					"Enables a previously disabled module.",
+			'install':	"Usage:   baf module install <modulename>\n\n" +
+					"Installs a module from the repository.",
+			'list':		"Usage:   baf module list\n\n" +
+					"Lists all modules available in repository.",
+			'search':	"Usage:   baf search <searchterm>\n\n" +
+					"Searches for <searchterm> in repository and lists all installable modules that match."
+		}
+	}
+
+def baf_help_print(arg1, arg2):
+
+	level1 = 'main'
+	level2 = 'main'
+
+	for k, v in baf_help.iteritems():
+		if k == arg1:
+			level1 = arg1
+
+	for k, v in baf_help[level1].iteritems():
+		if k == arg2:
+				level2 = arg2
+
+	print "\n" + baf_help[level1][level2] + "\n"
+
+	return(0)
 
 def baf_create_template():
 
@@ -270,7 +321,7 @@ def baf_package_add_file_list(pkg):
 
 def baf_package_create():
 
-	pkg_name = datetime.datetime.now().strftime(baf_dirs['pkg']['dir'] + "/userapp-%Y-%m-%d_%H_%M_%S.tar.gz")
+	pkg_name = datetime.datetime.now().strftime(baf_dirs['pkg']['dir'] + "/" + baf_package_get_name() + "-%Y-%m-%d_%H_%M_%S.tar.gz")
 
 	try:
 		pkg = tarfile.open(pkg_name, "w:gz")
@@ -288,6 +339,8 @@ def baf_package_create():
 		pkg.add(baf_dirs['pkginfo']['dir'] + "/" + baf_file['vers'], arcname=baf_file['vers'])
 		baf_package_add_file_list(pkg)
 		pkg.close()
+
+	print " * saved UserAppFS to '" + os.getcwd() + "/" + pkg_name + "'"
 
 	return(0)
 
@@ -606,48 +659,37 @@ def baf_module_pkg_install(pkg_name):
 
 	return(1)
 
-def baf_module(argv):
-
-	if len(argv) is 2:
-		print baf_usage['module']
-		return(1)
-
-	if argv[2] == "help":
-		print baf_usage['module']
-		return(0)
+def baf_module(args):
 
 	if baf_conf_read():
 		print " ! not a valid baf app, leaving."
 		return(1)
 
-	if argv[2] == "list":
-		return(baf_module_pkg_list())
+	if len(args) is 3:
+		if args[2] == "list":
+			return(baf_module_pkg_list())
+	elif len(args) is 4:
+		if args[2] == "create":
+			return(baf_module_create(args[3]))
+		elif args[2] == "search":
+			return(baf_module_pkg_search(args[3]))
+		elif args[2] == "install":
+			return(baf_module_pkg_install(args[3]))
 
-	if len(argv) < 4:
-		print baf_usage['module']
-		return(1)
+		if not os.path.exists(baf_dirs['modules']['dir'] + "/" + args[3]):
+			print " ! module '" + args[3] + "' does not exist, leaving."
+			return(1)
 
-	if argv[2] == "create":
-		return(baf_module_create(argv[3]))
-	elif argv[2] == "search":
-		return(baf_module_pkg_search(argv[3]))
-	elif argv[2] == "install":
-		return(baf_module_pkg_install(argv[3]))
+		if args[2] == "delete":
+			return(baf_module_delete(args[3]))
+		elif args[2] == "compile":
+			return(baf_module_compile(args[3]))
+		elif args[2] == "enable":
+			return(baf_module_enable(args[3]))
+		elif args[2] == "disable":
+			return(baf_module_disable(args[3]))
 
-	if not os.path.exists(baf_dirs['modules']['dir'] + "/" + argv[3]):
-		print " ! module '" + argv[3] + "' does not exist, leaving."
-		return(1)
-
-	if argv[2] == "delete":
-		return(baf_module_delete(argv[3]))
-	elif argv[2] == "compile":
-		return(baf_module_compile(argv[3]))
-	elif argv[2] == "enable":
-		return(baf_module_enable(argv[3]))
-	elif argv[2] == "disable":
-		return(baf_module_disable(argv[3]))
-
-	print baf_usage['module']
+	print " ! invalid command, use 'baf help module' to get information about usage."
 	return(1)
 
 def baf_conf_read():
@@ -686,22 +728,25 @@ def baf_conf_init():
 
 def main():
 
-	if len(sys.argv) is 1:
-		print baf_usage['main']
-		sys.exit(1)
-	elif len(sys.argv) is 2:
+	if len(sys.argv) is 2:
 		if sys.argv[1] == "help":
-			print baf_usage['main']
-			sys.exit(0)
+			sys.exit(baf_help_print('main', 'main'))
 		elif sys.argv[1] == "make":
 			sys.exit(baf_make())
-	elif len(sys.argv) >= 3:
-		if sys.argv[1] == "create":
+	elif len(sys.argv) is 3:
+		if sys.argv[1] == "help":
+			sys.exit(baf_help_print(sys.argv[2], 'main'))
+		elif sys.argv[1] == "create":
 			sys.exit(baf_create(sys.argv[2]))
 		elif sys.argv[1] == "module":
 			sys.exit(baf_module(sys.argv))
+	elif len(sys.argv) is 4:
+		if sys.argv[1] == "help":
+			sys.exit(baf_help_print(sys.argv[2], sys.argv[3]))
+		elif sys.argv[1] == "module":
+			sys.exit(baf_module(sys.argv))
 
-	print baf_usage['main']
+	baf_help_print('main', 'main')
 	sys.exit(1)
 
 if __name__ == "__main__":
