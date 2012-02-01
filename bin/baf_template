@@ -321,6 +321,11 @@ def baf_package_add_file_list(pkg):
 
 def baf_package_create():
 
+	pkg_base_name = baf_package_get_name()
+
+	if len(pkg_base_name) is 0:
+		pkg_base_name = "userappfs"
+
 	pkg_name = datetime.datetime.now().strftime(baf_dirs['pkg']['dir'] + "/" + baf_package_get_name() + "-%Y-%m-%d_%H_%M_%S.tar.gz")
 
 	try:
