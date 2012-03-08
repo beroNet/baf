@@ -179,7 +179,19 @@ version 2 to be installed, set 'NEED_APPFS' to 2.
 The variable 'SLOTS' sets the slots used by your application. One slot
 represents ~1 megabyte of flash used by your application. The userappfs
 provides up to eight slots, so try to keep your application as small as
-possible.
+possible. Please round up the space consumed by your application;
+the following slot-assignments are recommended:
+
+   0 MB to 1 MB = 1 Slot
+   1 MB to 2 MB = 2 Slots
+   2 MB to 3 MB = 3 Slots
+   3 MB to 4 MB = 4 Slots
+   4 MB to 5 MB = 5 Slots
+   5 MB to 6 MB = 6 Slots
+   6 MB to 7 MB = 7 Slots
+   7 MB to 8 MB = 8 Slots
+
+
 
 The variable 'TYPE' sets the type of this package. This variable does not
 need to be changed.
