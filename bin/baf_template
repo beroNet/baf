@@ -103,7 +103,11 @@ baf_templates = {
 			"\t@for i in `/bin/ls $(CUR_DIR)/src/`; do \\\n",
 			"\t\tcd $(CUR_DIR)/src/$$i/; \\\n",
 			"\t\tmake install $(INST_OPTS); \\\n",
-			"\tdone;\n"
+			"\tdone;\n\n",
+			"clean:\n",
+			"\t@rm -rf $(CUR_DIR)/bin/*\n",
+			"\t@rm -rf $(CUR_DIR)/include/*\n",
+			"\t@rm -rf $(CUR_DIR)/lib/*\n"
 			],
 		baf_file['init']: [
 			"#!/bin/sh\n",
