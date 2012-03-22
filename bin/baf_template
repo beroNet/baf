@@ -522,7 +522,11 @@ def baf_module_install(name):
 						os.makedirs(os.path.dirname(tgt))
 
 					print "   * copying file '" + src + "' to '" + tgt + "'..."
-					shutil.copy(src, tgt)
+					if os.path.islink(src):
+						src_lnk = os.readlink(src)
+						os.symlink(src_lnk, tgt)
+					else:
+						shutil.copy(src, tgt)
 		f.close()
 
 	return(0)
