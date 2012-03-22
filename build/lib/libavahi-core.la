@@ -17,7 +17,7 @@ old_library='libavahi-core.a'
 inherited_linker_flags=' -pthread'
 
 # Libraries that this one depends upon.
-dependency_libs=' /home/florian/src/berofixfs/app/arm/work/target/usr/local/lib/libavahi-common.la'
+dependency_libs=' /home/florian/src/1_berofixfs/app/arm/work/target-full/usr/local/lib/libavahi-common.la'
 
 # Names of additional weak libraries provided by this library
 weak_library_names=''
@@ -38,4 +38,4 @@ dlopen=''
 dlpreopen=''
 
 # Directory that this library needs to be installed in:
-libdir='/home/florian/src/berofixfs/app/arm/work/target/usr/local/lib'
+libdir='/home/florian/src/1_berofixfs/app/arm/work/target-full/usr/local/lib'

@@ -1,0 +1,11 @@
+prefix=/home/florian/src/1_berofixfs/app/arm/work/target-full/usr/local
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: vdemgmt
+Description: Virtual Distributed Ethernet console management library.
+Version: 2.3.1
+Libs: -L${libdir} -lvdemgmt
+Cflags: -I${includedir}
+

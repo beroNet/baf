@@ -1,4 +1,4 @@
-prefix=/home/florian/src/berofixfs/app/arm/work/target/usr/local
+prefix=/home/florian/src/1_berofixfs/app/arm/work/target-full/usr/local
 exec_prefix=${prefix}
 libdir=${exec_prefix}/lib
 includedir=${prefix}/include

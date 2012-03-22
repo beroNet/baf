@@ -1,6 +1,6 @@
-prefix=/home/florian/src/berofixfs/app/arm/work/target/usr/local
+prefix=/home/florian/src/1_berofixfs/app/arm/work/target-full/usr/local
 exec_prefix=${prefix}
-libdir=/home/florian/src/berofixfs/app/arm/work/target/usr/local/lib
+libdir=/home/florian/src/1_berofixfs/app/arm/work/target-full/usr/local/lib
 includedir=${prefix}/include
 
 Name: avahi-core

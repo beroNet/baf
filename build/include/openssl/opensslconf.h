@@ -104,8 +104,8 @@
 
 #if !(defined(VMS) || defined(__VMS)) /* VMS uses logical names instead */
 #if defined(HEADER_CRYPTLIB_H) && !defined(OPENSSLDIR)
-#define ENGINESDIR "/home/florian/src/berofixfs/app/arm/work/target/usr/local/lib/engines"
-#define OPENSSLDIR "/home/florian/src/berofixfs/app/arm/work/target/usr/local/ssl"
+#define ENGINESDIR "/home/florian/src/1_berofixfs/app/arm/work/target-full/usr/local/lib/engines"
+#define OPENSSLDIR "/home/florian/src/1_berofixfs/app/arm/work/target-full/usr/local/ssl"
 #endif
 #endif
 

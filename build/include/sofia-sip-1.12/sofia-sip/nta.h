@@ -216,12 +216,15 @@ SOFIAPUBFUN uint32_t nta_leg_get_seq(nta_leg_t const *leg);
 /** Get remote request sequence number. @NEW_1_12_9 */
 SOFIAPUBFUN uint32_t nta_leg_get_rseq(nta_leg_t const *leg);
 
-/** Set UAC route. */
 SOFIAPUBFUN int nta_leg_client_route(nta_leg_t *leg,
 				     sip_record_route_t const *route,
 				     sip_contact_t const *contact);
 
-/** Set UAS route */
+SOFIAPUBFUN int nta_leg_client_reroute(nta_leg_t *leg,
+				       sip_record_route_t const *route,
+				       sip_contact_t const *contact,
+				       int initial);
+
 SOFIAPUBFUN int nta_leg_server_route(nta_leg_t *leg,
 				     sip_record_route_t const *route,
 				     sip_contact_t const *contact);
@@ -390,6 +393,8 @@ nta_outgoing_t *nta_outgoing_default(nta_agent_t *agent,
 SOFIAPUBFUN int nta_outgoing_bind(nta_outgoing_t *orq,
 				  nta_response_f *callback,
 				  nta_outgoing_magic_t *magic);
+SOFIAPUBFUN nta_outgoing_magic_t *nta_outgoing_magic(nta_outgoing_t const *orq,
+						     nta_response_f *callback);
 SOFIAPUBFUN int nta_outgoing_status(nta_outgoing_t const *orq);
 SOFIAPUBFUN sip_method_t nta_outgoing_method(nta_outgoing_t const *orq);
 SOFIAPUBFUN char const *nta_outgoing_method_name(nta_outgoing_t const *orq);

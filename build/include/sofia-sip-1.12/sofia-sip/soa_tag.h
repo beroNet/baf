@@ -72,18 +72,6 @@ enum {
  * soa_get_params() or soa_get_paramlist()
  */
 
-#define SOATAG_LOCAL_SDP(x)  soatag_local_sdp, sdptag_session_v(x)
-SOFIAPUBVAR tag_typedef_t soatag_local_sdp;
-#define SOATAG_LOCAL_SDP_REF(x) \
-  soatag_local_sdp_ref, sdptag_session_vr(&(x))
-SOFIAPUBVAR tag_typedef_t soatag_local_sdp_ref;
-
-#define SOATAG_LOCAL_SDP_STR(x)  soatag_local_sdp_str, tag_str_v(x)
-SOFIAPUBVAR tag_typedef_t soatag_local_sdp_str;
-#define SOATAG_LOCAL_SDP_STR_REF(x) \
-  soatag_local_sdp_str_ref, tag_str_vr(&(x))
-SOFIAPUBVAR tag_typedef_t soatag_local_sdp_str_ref;
-
 #define SOATAG_USER_SDP(x)  soatag_user_sdp, sdptag_session_v(x)
 SOFIAPUBVAR tag_typedef_t soatag_user_sdp;
 #define SOATAG_USER_SDP_REF(x) \
@@ -257,6 +245,12 @@ SOFIAPUBVAR tag_typedef_t soatag_reuse_rejected;
 #define SOATAG_REUSE_REJECTED_REF(x) \
   soatag_reuse_rejected_ref, tag_bool_vr(&(x))
 SOFIAPUBVAR tag_typedef_t soatag_reuse_rejected_ref;
+
+#define SOATAG_DELAYED_OFFER_ENABLE(x)  soatag_delayed_offer_enable, tag_bool_v(x)
+SOFIAPUBVAR tag_typedef_t soatag_delayed_offer_enable;
+
+#define SOATAG_DELAYED_OFFER_ENABLE_REF(x) soatag_delayed_offer_enable_ref, tag_bool_vr(&(x))
+SOFIAPUBVAR tag_typedef_t soatag_delayed_offer_enable_ref;
 
 SOFIA_END_DECLS
 

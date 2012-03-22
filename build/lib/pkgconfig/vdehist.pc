@@ -1,0 +1,11 @@
+prefix=/home/florian/src/1_berofixfs/app/arm/work/target-full/usr/local
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: vdehist
+Description: A library to manage history and command completion for vde mgmt protocol
+Version: 2.3.1
+Libs: -L${libdir} -lvdehist
+Cflags: -I${includedir}
+

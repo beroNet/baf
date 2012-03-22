@@ -484,10 +484,18 @@ SOFIAPUBFUN int su_root_release(su_root_t *root);
 SOFIAPUBFUN int su_root_obtain(su_root_t *root);
 SOFIAPUBFUN int su_root_has_thread(su_root_t *root);
 
+SOFIAPUBFUN int su_root_set_max_defer(su_root_t *, su_duration_t max_defer);
+SOFIAPUBFUN su_duration_t su_root_get_max_defer(su_root_t const *self);
+
+SOFIAPUBFUN su_root_t *su_root_clone(su_root_t *root, su_root_magic_t *magic)
+  __attribute__((__malloc__));
+
 /* Timers */
 SOFIAPUBFUN su_timer_t *su_timer_create(su_task_r const, su_duration_t msec)
      __attribute__((__malloc__));
 SOFIAPUBFUN void su_timer_destroy(su_timer_t *);
+SOFIAPUBFUN int su_timer_is_set(su_timer_t const *t); /* 1.12.11 */
+SOFIAPUBFUN su_time_t su_timer_latest(su_timer_t const *t);
 SOFIAPUBFUN int su_timer_set(su_timer_t *, su_timer_f, su_timer_arg_t *);
 SOFIAPUBFUN int su_timer_set_interval(su_timer_t *t, su_timer_f,
 				      su_timer_arg_t *, su_duration_t);
@@ -503,10 +511,10 @@ SOFIAPUBFUN su_root_t *su_timer_root(su_timer_t const *);
 SOFIAPUBFUN int su_timer_expire(su_timer_queue_t * const,
 				su_duration_t *tout,
 				su_time_t now);
+SOFIAPUBFUN int su_timer_deferrable(su_timer_t *t, int value); /* 1.12.11 */
 
 /* Tasks */
 
-/** NULL task. */
 SOFIAPUBVAR su_task_r const su_task_null;
 
 SOFIAPUBFUN _su_task_r su_task_init(su_task_r task);
@@ -519,6 +527,9 @@ SOFIAPUBFUN int su_task_is_running(su_task_r const);
 
 SOFIAPUBFUN su_root_t *su_task_root(su_task_r const self);
 SOFIAPUBFUN su_timer_queue_t *su_task_timers(su_task_r const self);
+SOFIAPUBFUN su_timer_queue_t *su_task_deferrable(su_task_r const task);
+
+SOFIAPUBFUN int su_task_wakeup(su_task_r const task);
 
 SOFIAPUBFUN int su_task_execute(su_task_r const task,
 				int (*function)(void *), void *arg,
