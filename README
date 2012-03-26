@@ -100,6 +100,12 @@ Copy or rename it, but keep the scheme S[0-9]{2}[a-zA-Z]{*}. Edit it to the
 needs of your UserApp and keep in mind:
 The path on bero*fix will be '/userapp/an_app/'!
 
+If you want to run an application periodically, there's also an init-
+script names 'S00cronexample'. This example shows how a cron job is added
+(and removed) to the cron-daemon running on bero*fix.
+Please see [http://www.unixgeeks.org/security/newbie/unix/cron-1.html] for
+more information on the syntax of an entry in crontab.
+
 If you want the init-script to be installed, please remember to add it
 to your 'mod_files.lst'!
 
