@@ -162,7 +162,7 @@ baf_templates = {
 			"\tstop)\n",
 			"\t\techo \"Removing cron-Entry of app...\"\n",
 			"\t\tsed ${CRON_LINE_SED} /usr/conf/cron/admin > /tmp/admin_cron\n",
-			"\t\ttr -d '\\n' < /tmp/admin_cron > /usr/conf/cron/admin\n",
+			"\t\ttr -s '\\n' < /tmp/admin_cron > /usr/conf/cron/admin\n",
 			"\t\trm -f /tmp/admin_cron\n",
 			"\t\t;;\n",
 			"esac\n"
