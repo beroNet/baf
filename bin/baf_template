@@ -384,8 +384,8 @@ def baf_create(name):
 		if baf_create_pkginfo():
 			return(1)
 
-#		if baf_create_template():
-#			return(1)
+		if baf_create_template():
+			return(1)
 	finally:
 		return(0)
 
