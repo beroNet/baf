@@ -19,7 +19,7 @@ baf_conf = {}
 baf_dirs = {
 		'template': {
 			'dir': "template",
-			'sub': ["init", "setup", "bin", "lib", "www", "cron", "avahi", "cloud"]
+			'sub': ["init", "setup", "bin", "lib", "www", "avahi", "cloud"]
 			},
 		'pkg': {
 			'dir': "pkg"
@@ -31,7 +31,7 @@ baf_dirs = {
 			'dir': "modules"
 			},
 		'module': {
-			'sub': ["bin", "lib", "conf", "www", "init", "src", "cron"]
+			'sub': ["bin", "lib", "conf", "www", "init", "src"]
 			},
 		'work': {
 			'dir': "work",
@@ -42,7 +42,9 @@ baf_dirs = {
 baf_file = {
 		'conf': ".baf.conf",
 		'vers': "VERSION",
-		'init': "S00example"
+		'init': "S00example",
+		'cron': "S00cronexample",
+		'html': "index.php"
 		}
 
 baf_templates = {
@@ -135,6 +137,53 @@ baf_templates = {
 			"\t\texit 1\n",
 			"\t\t;;\n",
 			"esac\n"
+			],
+		baf_file['cron']: [
+			"#!/bin/sh\n",
+			"# This is an example for an init-script creating a cron-entry for an UserApp\n\n",
+			"DISABLED=yes\n\n",
+			"if [ \"${DISABLED}\" = \"yes\" ]; then\n",
+			"\texit 0\n",
+			"fi\n\n",
+			"CRON_LINE_NOR=\"*/1 * * * * /apps/appname/bin/a_bin\"\n",
+			"CRON_LINE_SED=\"s/\*\/1 \* \* \* \* \/apps\/appname\/bin\/a_bin//\"\n\n",
+			"case \"${1}\" in\n",
+			"\tstart)\n",
+			"\t\techo \"Adding cron-Entry for app...\"\n",
+			"\t\techo ${CRON_LINE_NOR} >> /usr/conf/cron/admin\n",
+			"\t\t;;\n",
+			"\tstop)\n",
+			"\t\techo \"Removing cron-Entry of app...\"\n",
+			"\t\tsed ${CRON_LINE_SED} /usr/conf/cron/admin > /tmp/admin_cron\n",
+			"\t\ttr -s '\\n' < /tmp/admin_cron > /usr/conf/cron/admin\n",
+			"\t\trm -f /tmp/admin_cron\n",
+			"\t\t;;\n",
+			"esac\n"
+			],
+		baf_file['html']: [
+			"<?php\n\n",
+			"@session_start();\n",
+			"if (!isset($_SESSION['beroari_time'])) {\n",
+			"\theader(\"Location: /app/berogui\");\n",
+			"} elseif ((isset($_SESSION['beroari_time'])) && (($_SESSION['beroari_time'] + 1200) < time())) {\n",
+			"\t@session_unset();\n",
+			"\t@session_destroy();\n",
+			"\theader(\"Location: /app/berogui\");\n",
+			"}\n",
+			"$_SESSION['beroari_time'] = time();\n\n",
+			"# Put content below this line.\n\n",
+			"$ret = \n",
+			"\t\"<html>\\n\" .\n",
+			"\t\"\\t<head>\\n\" .\n",
+			"\t\"\\t\\t<title>UserApp Sample Page</title>\\n\" .\n",
+			"\t\"\\t</head>\\n\" .\n",
+			"\t\"\\t<body>\\n\" .\n",
+			"\t\"\\t\\t<h1>UserApp Sample Page</h1>\\n\" .\n",
+			"\t\"\\t\\t<div>Fill me with content and make me pretty!</div>\\n\" .\n",
+			"\t\"\\t</body>\\n\" .\n",
+			"\t\"</html>\\n\";\n\n",
+			"echo $ret;\n\n",
+			"?>\n"
 			]
 		}
 
@@ -210,7 +259,59 @@ def baf_create_template():
 				print " ! Could not create '" + baf_dirs['template']['dir'] + "/" + sub_dir + "', leaving."
 				return(1)
 	finally:
-		return(0)
+		# create init example
+		f_name = baf_dirs['template']['dir'] + "/init/" + baf_file['init']
+		try:
+			f = open(f_name, "w")
+		except IOError:
+			print " ! Could not open '" + f_name + "' for writing, leaving."
+			return(1)
+		else:
+			for line in baf_templates[baf_file['init']]:
+				if line == "BAF_INIT_BIN":
+					f.write("\t\t/userapp/" + os.path.basename(os.getcwd()) + "/bin/example\n")
+				elif line == "BAF_KILL_BIN":
+					f.write("\t\tkillall -9 /userapp/" + os.path.basename(os.getcwd()) + "/bin/example\n")
+				else:
+					f.write(line)
+			f.close()
+
+		os.chmod(f_name, 0755)
+
+		# create cron example
+		f_name = baf_dirs['template']['dir'] + "/init/" + baf_file['cron']
+		try:
+			f = open(f_name, "w")
+		except IOError:
+			print " ! Could not open '" + f_name + "' for writing, leaving."
+			return(1)
+		else:
+			for line in baf_templates[baf_file['cron']]:
+				if line == "BAF_INIT_BIN":
+					f.write("\t\t/userapp/" + os.path.basename(os.getcwd()) + "/bin/example\n")
+				elif line == "BAF_KILL_BIN":
+					f.write("\t\tkillall -9 /userapp/" + os.path.basename(os.getcwd()) + "/bin/example\n")
+				else:
+					f.write(line)
+			f.close()
+
+		os.chmod(f_name, 0755)
+
+		# create html example
+		f_name = baf_dirs['template']['dir'] + "/www/" + baf_file['html']
+		try:
+			f = open(f_name, "w")
+		except IOError:
+			print " ! Could not open '" + f_name + "' for writing, leaving."
+			return(1)
+		else:
+			for line in baf_templates[baf_file['html']]:
+				f.write(line)
+			f.close()
+
+		os.chmod(f_name, 0644)
+
+	return(0)
 
 def baf_create_pkginfo():
 
@@ -430,24 +531,6 @@ def baf_module_create(name):
 			if line == "CUR_DIR\t\t:= $(shell pwd)\n":
 				f.write("BAF_DIR\t\t:= " + baf_conf['toolchain'] + "\n\n")
 		f.close()
-
-	f_name = baf_dirs['modules']['dir'] + "/" + name + "/" + baf_dirs['module']['sub'][4] + "/" + baf_file['init']
-	try:
-		f = open(f_name, "w")
-	except IOError:
-		print " ! Could not open '" + f_name + "' for writing, leaving."
-		return(1)
-	else:
-		for line in baf_templates[baf_file['init']]:
-			if line == "BAF_INIT_BIN":
-				f.write("\t\t/userapp/" + os.path.basename(os.getcwd()) + "/bin/example\n")
-			elif line == "BAF_KILL_BIN":
-				f.write("\t\tkillall -9 /userapp/" + os.path.basename(os.getcwd()) + "/bin/example\n")
-			else:
-				f.write(line)
-		f.close()
-
-	os.chmod(baf_dirs['modules']['dir'] + "/" + name + "/" + baf_dirs['module']['sub'][4] + "/" + baf_file['init'], 0755)
 
 	open(baf_dirs['modules']['dir'] + "/" + name + "/" + "mod_files.lst", "w").close()
 
