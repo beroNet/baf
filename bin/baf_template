@@ -36,7 +36,6 @@ baf_dirs = {
 		'work': {
 			'dir':		"work",
 			'sub':		"userapp",
-			'sub_subs':	["init", "setup", "bin", "lib", "www", "avahi", "cloud"]
 			}
 		}
 
@@ -484,9 +483,7 @@ def baf_make():
 		print " ! Could not create '" + baf_dirs['work']['dir'] + "', leaving."
 		return(1)
 	else:
-		os.mkdir(baf_dirs['work']['dir'] + "/" + baf_dirs['work']['sub'])
-		for subdir in baf_dirs['work']['sub_subs']:
-			os.mkdir(baf_dirs['work']['dir'] + "/" + baf_dirs['work']['sub'] + "/" + subdir);
+		shutil.copytree(baf_dirs['template']['dir'], baf_dirs['work']['dir'] + "/" + baf_dirs['work']['sub'])
 
 	print " * compiling modules..."
 	modules = os.listdir(baf_dirs['modules']['dir'])
