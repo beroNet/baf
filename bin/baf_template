@@ -17,6 +17,10 @@ import os, sys, string, shutil, datetime, tarfile, re, tempfile, urllib2
 baf_conf = {}
 
 baf_dirs = {
+		'template': {
+			'dir': "template",
+			'sub': ["init", "setup", "bin", "lib", "www", "avahi", "cloud"]
+			},
 		'pkg': {
 			'dir': "pkg"
 			},
@@ -27,8 +31,7 @@ baf_dirs = {
 			'dir': "modules"
 			},
 		'module': {
-#			'sub': ["bin", "lib", "conf", "www", "include", "init", "src"]
-			'sub': ["init", "www", "src"]
+			'sub': ["bin", "lib", "conf", "www", "init", "src"]
 			},
 		'work': {
 			'dir':		"work",
@@ -266,7 +269,59 @@ def baf_create_template():
 				print " ! Could not create '" + baf_dirs['template']['dir'] + "/" + sub_dir + "', leaving."
 				return(1)
 	finally:
-		return(0)
+		# create init example
+		f_name = baf_dirs['template']['dir'] + "/init/" + baf_file['init']
+		try:
+			f = open(f_name, "w")
+		except IOError:
+			print " ! Could not open '" + f_name + "' for writing, leaving."
+			return(1)
+		else:
+			for line in baf_templates[baf_file['init']]:
+				if line == "BAF_INIT_BIN":
+					f.write("\t\t/userapp/" + os.path.basename(os.getcwd()) + "/bin/example\n")
+				elif line == "BAF_KILL_BIN":
+					f.write("\t\tkillall -9 /userapp/" + os.path.basename(os.getcwd()) + "/bin/example\n")
+				else:
+					f.write(line)
+			f.close()
+
+		os.chmod(f_name, 0755)
+
+		# create cron example
+		f_name = baf_dirs['template']['dir'] + "/init/" + baf_file['cron']
+		try:
+			f = open(f_name, "w")
+		except IOError:
+			print " ! Could not open '" + f_name + "' for writing, leaving."
+			return(1)
+		else:
+			for line in baf_templates[baf_file['cron']]:
+				if line == "BAF_INIT_BIN":
+					f.write("\t\t/userapp/" + os.path.basename(os.getcwd()) + "/bin/example\n")
+				elif line == "BAF_KILL_BIN":
+					f.write("\t\tkillall -9 /userapp/" + os.path.basename(os.getcwd()) + "/bin/example\n")
+				else:
+					f.write(line)
+			f.close()
+
+		os.chmod(f_name, 0755)
+
+		# create html example
+		f_name = baf_dirs['template']['dir'] + "/www/" + baf_file['html']
+		try:
+			f = open(f_name, "w")
+		except IOError:
+			print " ! Could not open '" + f_name + "' for writing, leaving."
+			return(1)
+		else:
+			for line in baf_templates[baf_file['html']]:
+				f.write(line)
+			f.close()
+
+		os.chmod(f_name, 0644)
+
+	return(0)
 
 def baf_create_pkginfo():
 
@@ -488,59 +543,6 @@ def baf_module_create(name):
 			if line == "CUR_DIR\t\t:= $(shell pwd)\n":
 				f.write("BAF_DIR\t\t:= " + baf_conf['toolchain'] + "\n\n")
 		f.close()
-
-	# create init example
-	f_name = baf_dirs['modules']['dir'] + "/" + name + "/" + baf_dirs['module']['sub'][0] + "/" + baf_file['init']
-	try:
-		f = open(f_name, "w")
-	except IOError:
-		print " ! Could not open '" + f_name + "' for writing, leaving."
-		return(1)
-	else:
-		for line in baf_templates[baf_file['init']]:
-			if line == "BAF_INIT_BIN":
-				f.write("\t\t/userapp/" + os.path.basename(os.getcwd()) + "/bin/example\n")
-			elif line == "BAF_KILL_BIN":
-				f.write("\t\tkillall -9 /userapp/" + os.path.basename(os.getcwd()) + "/bin/example\n")
-			else:
-				f.write(line)
-		f.close()
-
-	os.chmod(baf_dirs['modules']['dir'] + "/" + name + "/" + baf_dirs['module']['sub'][0] + "/" + baf_file['init'], 0755)
-
-	# create cron example
-	f_name = baf_dirs['modules']['dir'] + "/" + name + "/" + baf_dirs['module']['sub'][0] + "/" + baf_file['cron']
-	try:
-		f = open(f_name, "w")
-	except IOError:
-		print " ! Could not open '" + f_name + "' for writing, leaving."
-		return(1)
-	else:
-		for line in baf_templates[baf_file['cron']]:
-			if line == "BAF_INIT_BIN":
-				f.write("\t\t/userapp/" + os.path.basename(os.getcwd()) + "/bin/example\n")
-			elif line == "BAF_KILL_BIN":
-				f.write("\t\tkillall -9 /userapp/" + os.path.basename(os.getcwd()) + "/bin/example\n")
-			else:
-				f.write(line)
-		f.close()
-
-	os.chmod(baf_dirs['modules']['dir'] + "/" + name + "/" + baf_dirs['module']['sub'][0] + "/" + baf_file['cron'], 0755)
-
-
-	# create html example
-	f_name = baf_dirs['modules']['dir'] + "/" + name + "/" + baf_dirs['module']['sub'][1] + "/" + baf_file['html']
-	try:
-		f = open(f_name, "w")
-	except IOError:
-		print " ! Could not open '" + f_name + "' for writing, leaving."
-		return(1)
-	else:
-		for line in baf_templates[baf_file['html']]:
-			f.write(line)
-		f.close()
-	os.chmod(baf_dirs['modules']['dir'] + "/" + name + "/" + baf_dirs['module']['sub'][1] + "/" + baf_file['html'], 0644)
-
 
 	open(baf_dirs['modules']['dir'] + "/" + name + "/" + "mod_files.lst", "w").close()
 
