@@ -572,8 +572,8 @@ def baf_module_compile(name):
 
 	print "  * compiling module '" + name + "'..."
 	ret = os.system("make -s")
-	if ret is 0:
-		ret = os.system("make install -s")
+#	if ret is 0:
+#		ret = os.system("make install -s")
 
 	os.chdir(base_dir)
 
