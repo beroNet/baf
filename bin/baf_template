@@ -12,7 +12,11 @@
 #   support@beronet.com
 #
 
-import os, sys, string, shutil, datetime, tarfile, re, tempfile, urllib2
+import os, sys, string, shutil, datetime, tarfile, re, tempfile, urllib2, warnings
+
+with warnings.catch_warnings():
+	warnings.simplefilter("ignore")
+	import paramiko
 
 baf_conf = {}
 
@@ -171,27 +175,38 @@ baf_templates = {
 			],
 		baf_file['html']: [
 			"<?php\n\n",
+			"# Define functions below this line.\n",
+			"# Define functions above this line.\n\n",
+			"# Name of your app:\n",
+			"$app_name = 'example';\n\n",
+			"# Basepath of your app:\n",
+			"$base_path = '/apps/' . $app_name;\n\n",
+			"# BEGIN Session management #\n\n",
+			"$redir_login = '/app/berogui/includes/login.php';\n\n",
 			"@session_start();\n",
 			"if (!isset($_SESSION['beroari_time'])) {\n",
-			"\theader(\"Location: /app/berogui\");\n",
+			"\theader('Location:' . $redir_login . '?userapp=' . $app_name);\n",
+			"\texit();\n",
 			"} elseif ((isset($_SESSION['beroari_time'])) && (($_SESSION['beroari_time'] + 1200) < time())) {\n",
 			"\t@session_unset();\n",
 			"\t@session_destroy();\n",
-			"\theader(\"Location: /app/berogui\");\n",
-			"}\n",
+			"\theader('Location:' . $redir_login . '?reason=sess_expd&userapp=' . $app_name);\n",
+			"\texit();\n",
+			"}\n\n",
+			"unset($redir_login);\n\n",
 			"$_SESSION['beroari_time'] = time();\n\n",
-			"# Put content below this line.\n\n",
-			"$ret = \n",
-			"\t\"<html>\\n\" .\n",
+			"#  END session management  #\n\n",
+			"echo\t\"<xml version=\\\"1.0\\\" encoding=\\\"UTF-8\\\">\\n\" .\n",
+			"\t\"\\t<!DOCTYPE html PUBLIC \\\"-//W3C//DTD XHTML 1.1//EN\\\" \\\"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\\\">\\n\" .\n",
+			"\t\"<html xmlns=\\\"http://www.w3.org/1999/xhtml\\\" xml:lang=\\\"en\\\">\\n\" .\n",
 			"\t\"\\t<head>\\n\" .\n",
-			"\t\"\\t\\t<title>UserApp Sample Page</title>\\n\" .\n",
+			"\t\"\\t\\t<title>\" . $app_name . \"</title>\\n\" .\n",
 			"\t\"\\t</head>\\n\" .\n",
 			"\t\"\\t<body>\\n\" .\n",
-			"\t\"\\t\\t<h1>UserApp Sample Page</h1>\\n\" .\n",
+			"\t\"\\t\\t<h1>\" . $app_name . \"</h1>\\n\" .\n",
 			"\t\"\\t\\t<div>Fill me with content and make me pretty!</div>\\n\" .\n",
 			"\t\"\\t</body>\\n\" .\n",
 			"\t\"</html>\\n\";\n\n",
-			"echo $ret;\n\n",
 			"?>\n"
 			]
 		}
@@ -210,7 +225,13 @@ baf_help = {
 			'main': "Usage:   baf make\n\n" +
 				"Compiles all enabled modules and creates an archive of this UserApp in '<appname>/pkg'."
 		},
-		'module' : {
+		'deploy': {
+			'main': "Usage:   baf deploy <berofix_ipaddr> [<userapp_archive>]\n\n" +
+				"Installs pkg/<userapp_archive> on <berofix_ipaddr>.\n" +
+				"If <userapp_archive> is not given the newest archive will be taken.\n\n" +
+				"Make sure to set ssh_keyfile in '.baf.conf' to a ssh key that is authorized for the root-user on berofix!"
+		},
+		'module': {
 			'main':		"Usage:   baf module [create | compile | delete | disable | enable | install] <appname>\n" +
 					"         baf module list\n" +
 					"         baf module search <searchterm>\n\n" +
@@ -500,6 +521,57 @@ def baf_make():
 	if baf_package_create():
 		print " ! Could not create package, leaving."
 		return(1)
+
+	return(0)
+
+def baf_deploy(host, app_file=None):
+
+	if baf_conf_read():
+		print " ! not a valid baf app, leaving."
+		return(1)
+
+	if not 'ssh_keyfile' in baf_conf:
+		print " ! No SSH keyfile given, leaving."
+		return(2)
+
+	if not os.path.exists(baf_conf['ssh_keyfile']):
+		print " ! SSH keyfile does not exist, leaving."
+		return(3)
+
+	path_l = os.getcwd() + '/pkg'
+	path_r = '/tmp/images'
+
+	if app_file is None:
+		filelist = os.listdir(path_l)
+		filelist = filter(lambda x: not os.path.isdir(path_l + '/' + x), filelist)
+		app_file = max(filelist, key=lambda x: os.stat(path_l + '/' + x).st_mtime)
+
+	if not os.path.exists(path_l + '/' + app_file):
+		print " ! file '" + app_file + "' does not exist."
+		return(4)
+
+	ssh = paramiko.SSHClient()
+	ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+
+	ssh.connect(host, username='root', key_filename=baf_conf['ssh_keyfile'])
+
+	ssh.exec_command('mkdir -p ' + path_r)
+
+	print " * Uploading file " + path_l + "/" + app_file + " to " + host + ":" + path_r + "."
+	ftp = ssh.open_sftp()
+	ftp.put(path_l + '/' + app_file, path_r + '/' + app_file)
+	ftp.close()
+
+	print " * Installing " + app_file + " on " + host + "."
+	stdin, stdout, stderr = ssh.exec_command('/usr/local/sbin/install.sh ' + app_file)
+	type(stdin)
+
+	print " * Installation Log:"
+	for line in stdout.readlines():
+		print "   - " + line.rstrip('\n')
+
+	ssh.exec_command('rm -f ' + path_r + '/' + app_file)
+	ssh.close()
 
 	return(0)
 
@@ -845,11 +917,15 @@ def main():
 			sys.exit(baf_create(sys.argv[2]))
 		elif sys.argv[1] == "module":
 			sys.exit(baf_module(sys.argv))
+		elif sys.argv[1] == "deploy":
+			sys.exit(baf_deploy(sys.argv[2]))
 	elif len(sys.argv) is 4:
 		if sys.argv[1] == "help":
 			sys.exit(baf_help_print(sys.argv[2], sys.argv[3]))
 		elif sys.argv[1] == "module":
 			sys.exit(baf_module(sys.argv))
+		elif sys.argv[1] == "deploy":
+			sys.exit(baf_deploy(sys.argv[2], sys.argv[3]))
 
 	baf_help_print('main', 'main')
 	sys.exit(1)
