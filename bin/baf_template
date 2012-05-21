@@ -16,7 +16,11 @@ import os, sys, string, shutil, datetime, tarfile, re, tempfile, urllib2, warnin
 
 with warnings.catch_warnings():
 	warnings.simplefilter("ignore")
-	import paramiko
+	try:
+		import paramiko
+	except ImportError:
+		print "\nTo use command 'baf deploy' please install python package 'paramiko'!"
+
 
 baf_conf = {}
 
