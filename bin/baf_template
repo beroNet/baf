@@ -490,7 +490,7 @@ def baf_package_create():
 
 def baf_make():
 
-	if baf_conf_read():
+	if baf_conf_read() is 'none':
 		print " ! not a valid baf app, leaving."
 		return(1)
 
@@ -530,7 +530,7 @@ def baf_make():
 
 def baf_deploy(host, app_file=None):
 
-	if baf_conf_read():
+	if baf_conf_read() is 'none':
 		print " ! not a valid baf app, leaving."
 		return(1)
 
@@ -842,7 +842,7 @@ def baf_module_pkg_install(pkg_name):
 
 def baf_module(args):
 
-	if baf_conf_read():
+	if baf_conf_read() is 'none':
 		print " ! not a valid baf app, leaving."
 		return(1)
 
@@ -875,15 +875,24 @@ def baf_module(args):
 
 def baf_conf_read():
 
-	if not os.path.isfile(baf_file['conf']):
+	cur_path = os.getcwd()
+	wrk_path = cur_path
+
+	while wrk_path is not '/' and os.path.isfile(wrk_path + '/' + baf_file['conf']) is not True:
+		os.chdir('..')
+		wrk_path = os.getcwd()
+
+	if wrk_path is '/':
 		print " ! Configuration file '" + baf_file['conf'] + "' not found, leaving."
-		return(1)
+		os.chdir(cur_path)
+		return('none')
 
 	try:
 		f = open(baf_file['conf'], "r")
 	except IOError:
 		print " ! Configuration file '" + baf_file['conf'] + "' not readable, leaving."
-		return(1)
+		os.chdir(cur_path)
+		return('none')
 	else:
 		for line in f.readlines():
 			if len(line.rstrip('\n')) is not 0 and line[0] is not '#':
@@ -891,7 +900,7 @@ def baf_conf_read():
 				baf_conf[k] = v
 		f.close()
 
-	return(0)
+	return(cur_path)
 
 def baf_conf_init():
 
