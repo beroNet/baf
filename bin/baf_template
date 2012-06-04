@@ -465,6 +465,9 @@ def baf_package_create():
 	if len(pkg_base_name) is 0:
 		pkg_base_name = "userappfs"
 
+	if not os.path.exists(baf_dirs['pkg']['dir']):
+		os.mkdir(baf_dirs['pkg']['dir'])
+
 	pkg_name = datetime.datetime.now().strftime(baf_dirs['pkg']['dir'] + "/" + baf_package_get_name() + "-%Y-%m-%d_%H_%M_%S.tar.gz")
 
 	try:
@@ -510,16 +513,17 @@ def baf_make():
 	else:
 		shutil.copytree(baf_dirs['template']['dir'], baf_dirs['work']['dir'] + "/" + baf_dirs['work']['sub'])
 
-	print " * compiling modules..."
-	modules = os.listdir(baf_dirs['modules']['dir'])
-	for module in modules:
-		baf_module_compile(module)
+	if os.path.exists(baf_dirs['modules']['dir']):
+		print " * compiling modules..."
+		modules = os.listdir(baf_dirs['modules']['dir'])
+		for module in modules:
+			baf_module_compile(module)
 
-	print " * installing modules..."
-	for module in modules:
-		if baf_module_install(module):
-			print " ! Could not install module '" + module + "', leaving."
-			return(1)
+		print " * installing modules..."
+		for module in modules:
+			if baf_module_install(module):
+				print " ! Could not install module '" + module + "', leaving."
+				return(1)
 
 	print " * creating package..."
 	if baf_package_create():
