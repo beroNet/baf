@@ -27,7 +27,7 @@ baf_conf = {}
 baf_dirs = {
 		'template': {
 			'dir': "template",
-			'sub': ["init", "setup", "bin", "lib", "www", "avahi", "cloud"]
+			'sub': ["init", "setup", "bin", "lib", "www", "avahi", "cloud", "mnt"]
 			},
 		'pkg': {
 			'dir': "pkg"
@@ -52,7 +52,8 @@ baf_file = {
 		'vers': "VERSION",
 		'init': "S00example",
 		'cron': "S00cronexample",
-		'html': "index.php"
+		'html': "index.php",
+		'fsex': "fstab",
 		}
 
 baf_templates = {
@@ -212,6 +213,12 @@ baf_templates = {
 			"\t\"\\t</body>\\n\" .\n",
 			"\t\"</html>\\n\";\n\n",
 			"?>\n"
+			],
+		baf_file['fsex']: [
+			"# fstab example for userapps\n",
+			"# remote path\tlocal path\ttype\toptions\n",
+			"//192.168.0.1/path/to/cifs\t/mnt/cifs\tcifs\tusername=someuser,password=abcd\n",
+			"192.168.0.1:/path/to/nfs\t/mnt/nfs\tnfs\n"
 			]
 		}
 
@@ -330,6 +337,20 @@ def baf_create_template():
 			f.close()
 
 		os.chmod(f_name, 0755)
+
+		# create fstab example
+		f_name = baf_dirs['template']['dir'] + '/setup/' + baf_file['fsex']
+		try:
+			f = open(f_name, "w")
+		except IOError:
+			print " ! Could not open '" + f_name + "' for writing, leaving."
+			return(1)
+		else:
+			for line in baf_templates[baf_file['fsex']]:
+				f.write(line)
+			f.close()
+
+		os.chmod(f_name, 0644)
 
 		# create html example
 		f_name = baf_dirs['template']['dir'] + "/www/" + baf_file['html']
@@ -508,7 +529,7 @@ def baf_make():
 		print " ! Could not create '" + baf_dirs['work']['dir'] + "', leaving."
 		return(1)
 	else:
-		pat_ignore = ('S00example', 'S00cronexample')
+		pat_ignore = (baf_file['init'],  baf_file['cron'], baf_file['fsex'])
 		shutil.copytree(baf_dirs['template']['dir'], baf_dirs['work']['dir'] + "/" + baf_dirs['work']['sub'],
 				ignore=shutil.ignore_patterns(*pat_ignore))
 
