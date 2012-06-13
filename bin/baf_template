@@ -53,7 +53,7 @@ baf_file = {
 		'init': "S00example",
 		'cron': "S00cronexample",
 		'html': "index.php",
-		'fsex': "fstab",
+		'fsex': "fstab.example",
 		}
 
 baf_templates = {
