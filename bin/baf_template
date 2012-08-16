@@ -488,6 +488,27 @@ def baf_package_add_file_list(pkg):
 
 	return(0)
 
+def baf_update_version ():
+
+	pkg_size = 0
+	for dirpath, dirnames, filenames in os.walk(baf_dirs['work']['dir']):
+		for f in filenames:
+			fp = os.path.join(dirpath, f)
+			pkg_size += os.path.getsize(fp)
+
+	fp = open(baf_dirs['pkginfo']['dir'] + "/" + baf_file['vers'], "r")
+	lines = fp.readlines()
+	fp.close()
+
+	fp = open(baf_dirs['pkginfo']['dir'] + "/" + baf_file['vers'], "w")
+	for line in lines:
+		if line.find("SIZE=") != 0:
+			fp.write(line)
+	fp.write("SIZE=" + str(pkg_size) + "\n");
+	fp.close()
+
+	return(0)
+
 def baf_package_create():
 
 	pkg_base_name = baf_package_get_name()
@@ -496,6 +517,7 @@ def baf_package_create():
 		pkg_base_name = "userappfs"
 
 	pkg_name = datetime.datetime.now().strftime(baf_dirs['pkg']['dir'] + "/" + baf_package_get_name() + "-%Y-%m-%d_%H_%M_%S.tar.gz")
+	baf_update_version()
 
 	try:
 		pkg = tarfile.open(pkg_name, "w:gz")
