@@ -319,9 +319,9 @@ def baf_create_template():
 		else:
 			for line in baf_templates[baf_file['init']]:
 				if line == "BAF_INIT_BIN":
-					f.write("\t\t/userapp/" + os.path.basename(os.getcwd()) + "/bin/example\n")
+					f.write("\t\t/apps/" + os.path.basename(os.getcwd()) + "/bin/example\n")
 				elif line == "BAF_KILL_BIN":
-					f.write("\t\tkillall -9 /userapp/" + os.path.basename(os.getcwd()) + "/bin/example\n")
+					f.write("\t\tkillall -9 /apps/" + os.path.basename(os.getcwd()) + "/bin/example\n")
 				else:
 					f.write(line)
 			f.close()
@@ -338,9 +338,9 @@ def baf_create_template():
 		else:
 			for line in baf_templates[baf_file['cron']]:
 				if line == "BAF_INIT_BIN":
-					f.write("\t\t/userapp/" + os.path.basename(os.getcwd()) + "/bin/example\n")
+					f.write("\t\t/apps/" + os.path.basename(os.getcwd()) + "/bin/example\n")
 				elif line == "BAF_KILL_BIN":
-					f.write("\t\tkillall -9 /userapp/" + os.path.basename(os.getcwd()) + "/bin/example\n")
+					f.write("\t\tkillall -9 /apps/" + os.path.basename(os.getcwd()) + "/bin/example\n")
 				else:
 					f.write(line)
 			f.close()
