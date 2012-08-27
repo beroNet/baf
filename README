@@ -1,6 +1,17 @@
 This is a small introduction to the [b]ero*fix User[A]ppFS [f]ramework (baf).
 
 
+= See Also =
+
+http://developer.beronet.com/index.php/BAF_-_berofix_UserApp_Framework
+
+http://developer.beronet.com/index.php/UserApp_API_Reference
+
+http://developer.beronet.com/index.php/BeroFix_Filesystem_Layout
+
+http://developer.beronet.com/index.php/Baf_modules
+
+
 = Prerequisites for using baf =
 
  * x86- or x86_64 PC running Linux
