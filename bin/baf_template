@@ -132,6 +132,7 @@ baf_templates = {
 		baf_file['init']: [
 			"#!/bin/sh\n",
 			"# This is an example of an init-script for an UserApp\n\n",
+			"# This file won't be packed when 'baf make' is called! To use it please copy/rename this file.\n\n",
 			"DISABLED=yes\n\n",
 			"if [ \"${DISABLED}\" = \"yes\" ]; then\n",
 			"\texit 0\n",
@@ -168,6 +169,7 @@ baf_templates = {
 		baf_file['cron']: [
 			"#!/bin/sh\n",
 			"# This is an example for an init-script creating a cron-entry for an UserApp\n\n",
+			"# This file won't be packed when 'baf make' is called! To use it please copy/rename this file.\n\n",
 			"DISABLED=yes\n\n",
 			"if [ \"${DISABLED}\" = \"yes\" ]; then\n",
 			"\texit 0\n",
@@ -177,7 +179,7 @@ baf_templates = {
 			"case \"${1}\" in\n",
 			"\tstart)\n",
 			"\t\techo \"Adding cron-Entry for app...\"\n",
-			"\t\techo ${CRON_LINE_NOR} >> /usr/conf/cron/admin\n",
+			"\t\techo \"${CRON_LINE_NOR}\" >> /usr/conf/cron/admin\n",
 			"\t\t;;\n",
 			"\tstop)\n",
 			"\t\techo \"Removing cron-Entry of app...\"\n",
