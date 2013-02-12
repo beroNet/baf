@@ -49,6 +49,7 @@ baf_dirs = {
 
 baf_file = {
 		'conf': ".baf.conf",
+		'vers_meta': "VERSION_META",
 		'vers': "VERSION",
 		'init': "S00example",
 		'cron': "S00cronexample",
@@ -57,7 +58,7 @@ baf_file = {
 		}
 
 baf_templates = {
-		baf_file['vers']: {
+		baf_file['vers_meta']: {
 			'TYPE': "userappfs",
 			'VERSION': "1",
 			'DESCRIPTION': "\"default package\"",
@@ -235,7 +236,7 @@ baf_templates = {
 
 baf_help = {
 		'main': {
-			'main': "Usage:   baf [create <appname> | module <operation> <modulename> | make]\n\n" +
+			'main': "Usage:   baf [create <appname> | module <operation> <modulename> | make | init-conf]\n\n" +
 				"To get more info about a specific command, type:\n" +
 				"         baf help <command>"
 		},
@@ -275,6 +276,10 @@ baf_help = {
 					"Lists all modules available in repository.",
 			'search':	"Usage:   baf search <searchterm>\n\n" +
 					"Searches for <searchterm> in repository and lists all installable modules that match."
+		},
+		'init-conf': {
+			'main':		"Usage:   baf init-conf\n\n" +
+					"Re-Inits the .baf.conf. Make sure this is executed in the root-directory of your baf-app!"
 		}
 	}
 
@@ -388,7 +393,7 @@ def baf_create_pkginfo():
 		print " ! Could not create '" + baf_dirs['pkginfo']['dir'] + "', leaving."
 		return(1)
 	else:
-		f_name = baf_dirs['pkginfo']['dir'] + "/" + baf_file['vers']
+		f_name = baf_dirs['pkginfo']['dir'] + "/" + baf_file['vers_meta']
 		try:
 			f = open(f_name, "w")
 		except IOError:
@@ -396,13 +401,22 @@ def baf_create_pkginfo():
 			return(1);
 		else:
 			f.write("NAME=" + os.path.basename(os.getcwd()) + "\n");
-			for k, v in baf_templates[baf_file['vers']].iteritems():
+			for k, v in baf_templates[baf_file['vers_meta']].iteritems():
 				f.write(k + "=" + v + "\n")
 
 			f.flush()
 			f.close()
 	finally:
 		return(0)
+
+def baf_get_version_template_name():
+
+	if os.path.exists(baf_dirs['pkginfo']['dir'] + "/" + baf_file['vers_meta']):
+		vers_path = baf_dirs['pkginfo']['dir'] + "/" + baf_file['vers_meta']
+	else:
+		vers_path = baf_dirs['pkginfo']['dir'] + "/" + baf_file['vers']
+
+	return(vers_path)
 
 def baf_create(name):
 
@@ -447,7 +461,7 @@ def baf_create(name):
 
 def baf_info_update():
 
-	cmd = baf_conf['editor'] + " " + baf_dirs['pkginfo']['dir'] + "/" + baf_file['vers']
+	cmd = baf_conf['editor'] + " " + baf_get_version_template_name()
 	try:
 		os.system(cmd)
 	except OSError:
@@ -459,11 +473,12 @@ def baf_info_update():
 
 def baf_package_get_name():
 
-	f_name = baf_dirs['pkginfo']['dir'] + "/" + baf_file['vers']
+	vers_path = baf_get_version_template_name()
+
 	try:
-		f = open(f_name, "r")
+		f = open(vers_path, "r")
 	except IOError:
-		print " ! Could not open '" + f_name + "' for reading, leaving."
+		print " ! Could not open '" + vers_path + "' for reading, leaving."
 		return(False)
 	else:
 		c = f.read()
@@ -498,7 +513,9 @@ def baf_update_version ():
 			fp = os.path.join(dirpath, f)
 			pkg_size += os.path.getsize(fp)
 
-	fp = open(baf_dirs['pkginfo']['dir'] + "/" + baf_file['vers'], "r")
+	vers_path = baf_get_version_template_name()
+
+	fp = open(vers_path, "r")
 	lines = fp.readlines()
 	fp.close()
 
@@ -986,6 +1003,10 @@ def main():
 			sys.exit(baf_help_print('main', 'main'))
 		elif sys.argv[1] == "make":
 			sys.exit(baf_make())
+		elif sys.argv[1] == "init-conf":
+			print " * Creating .baf.conf in current directory.\n"
+			print " ! Make sure this is this the root-directory of your baf-app.\n"
+			sys.exit(baf_conf_init());
 	elif len(sys.argv) is 3:
 		if sys.argv[1] == "help":
 			sys.exit(baf_help_print(sys.argv[2], 'main'))
