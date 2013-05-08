@@ -816,6 +816,8 @@ def baf_module_get_pkgs(repo):
 		for item in line.rsplit(','):
 			pkg[sect[j]] = item.strip()
 			j += 1
+			if j is 4:
+				break
 		pkgs.append(pkg)
 		i += 1
 
