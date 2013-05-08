@@ -816,8 +816,9 @@ def baf_module_get_pkgs(repo):
 		for item in line.rsplit(','):
 			pkg[sect[j]] = item.strip()
 			j += 1
-			if j is 4:
+			if j is 3:
 				break
+		pkg[sect[j]] = re.search('"(.*)"$', line, re.M | re.I).group(1)
 		pkgs.append(pkg)
 		i += 1
 
